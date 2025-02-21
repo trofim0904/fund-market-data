@@ -2,5 +2,19 @@ namespace FundMarketLibrary.Descriptor;
 
 public class Constant
 {
-    public const string DefaultRequestHeaderUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36";
+    public static readonly Dictionary<char, decimal> LargeNumberRepresentation = new()
+    {
+        {
+            'K', 1000
+        },
+        {
+            'M', 1000000
+        },
+        {
+            'B', 1000000000
+        },
+        {
+            'T', 1000000000000
+        },
+    };
 }
