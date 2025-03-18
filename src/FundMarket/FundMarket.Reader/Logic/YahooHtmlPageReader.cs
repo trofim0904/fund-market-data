@@ -1,7 +1,7 @@
-using FundMarketLibrary.Model;
+using FundMarket.Reader.Model;
 using HtmlAgilityPack;
 
-namespace FundMarketLibrary.Logic;
+namespace FundMarket.Reader.Logic;
 
 public class YahooHtmlPageReader : IAssetReader
 {
@@ -39,17 +39,22 @@ public class YahooHtmlPageReader : IAssetReader
     private static string GetFirstElementInnerText(HtmlDocument doc, string filter)
     {
         var nodes = doc.DocumentNode.SelectNodes(filter);
+        if (nodes == null)
+        {
+            return string.Empty;
+        }
         foreach (HtmlNode node in nodes)
         {
-            if (node != null)
+            if (node == null)
             {
-                string innerText = node.InnerText.Trim();
-                if (string.IsNullOrWhiteSpace(innerText))
-                {
-                    continue;
-                }
-                return innerText.Split(' ')[0];
+                continue;
             }
+            var innerText = node.InnerText.Trim();
+            if (string.IsNullOrWhiteSpace(innerText))
+            {
+                continue;
+            }
+            return innerText.Split(' ')[0];
         }
         return string.Empty;
     }

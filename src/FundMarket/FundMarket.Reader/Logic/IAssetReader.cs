@@ -1,6 +1,6 @@
-using FundMarketLibrary.Model;
+using FundMarket.Reader.Model;
 
-namespace FundMarketLibrary.Logic;
+namespace FundMarket.Reader.Logic;
 
 public interface IAssetReader
 {
