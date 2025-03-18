@@ -1,4 +1,4 @@
-namespace FundMarketLibrary.Descriptor;
+namespace FundMarket.Reader.Descriptor;
 
 public class Constant
 {

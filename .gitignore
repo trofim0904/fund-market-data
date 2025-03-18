@@ -329,3 +329,6 @@ ASALocalRun/
 
 # MFractors (Xamarin productivity tool) working folder 
 .mfractor/
+
+# DB File
+src/FundMarket/FundMarket.Database/StockMarket.db

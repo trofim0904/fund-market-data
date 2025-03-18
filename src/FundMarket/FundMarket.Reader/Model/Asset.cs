@@ -1,4 +1,4 @@
-namespace FundMarketLibrary.Model;
+namespace FundMarket.Reader.Model;
 
 public class Asset(string ticker, decimal currentPrice, decimal futurePrice, decimal marketCap)
 {
