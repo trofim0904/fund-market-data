@@ -1,21 +1,19 @@
 using System.Globalization;
 using FundMarket.Database;
 using FundMarket.Database.Models;
-using FundMarket.Database.Repository;
 using FundMarket.Mapper;
 using FundMarket.Reader.Logic;
 using FundMarket.Reader.Model;
 
 namespace FundMarket;
 
-public static class StockService
+public class StockService(UnitOfWork unitOfWork)
 {
     /// <summary>
     /// Loads all tickers data specified in <see cref="Setup.Tickers"/> and saves to the DB.
     /// </summary>
-    public static async Task LoadData()
+    public async Task LoadData()
     {
-        await using HistoryRecordRepository historyRepo = new HistoryRecordRepository(new StockMarketContext());
         IAssetReader reader = new YahooHtmlPageReader();
         List<Task<Asset>> tasks = [];
         foreach (var ticker in Setup.Tickers)
@@ -25,18 +23,17 @@ public static class StockService
         var assets = await Task.WhenAll(tasks);
         foreach (var asset in assets)
         {
-            historyRepo.Insert(HistoryRecordAssetMapper.Map(asset));
+            unitOfWork.HistoryRepository.Insert(HistoryRecordAssetMapper.Map(asset));
         }
-        historyRepo.Save();
+        await unitOfWork.SaveChangesAsync();
     }
 
     /// <summary>
     /// Gets today's data from DB and displays in the console.
     /// </summary>
-    public static void SeeRecentData()
+    public void SeeRecentData()
     {
-        using IRepository<HistoryRecord> historyRepo = new HistoryRecordRepository(new StockMarketContext());
-        var historyRecords = historyRepo
+        var historyRecords = unitOfWork.HistoryRepository
             .Get(h => h.Date.Date == DateTime.UtcNow.Date)
             .DistinctBy(h => h.Ticker)
             .OrderByDescending(h => h.Change);
@@ -76,11 +73,10 @@ public static class StockService
     /// Reads info for the one ticker and saves the data to the DB, after displays in the console.
     /// </summary>
     /// <param name="ticker"></param>
-    public static async Task SeeTicker(string? ticker)
+    public async Task SeeTicker(string? ticker)
     {
         if (ticker != null)
         {
-            await using HistoryRecordRepository historyRepo = new HistoryRecordRepository(new StockMarketContext());
             IAssetReader reader = new YahooHtmlPageReader();
             Asset? asset = null;
             try
@@ -94,10 +90,20 @@ public static class StockService
             if (asset != null)
             {
                 var historyRecord = HistoryRecordAssetMapper.Map(asset);
-                historyRepo.Insert(historyRecord);
-                historyRepo.Save();
+                unitOfWork.HistoryRepository.Insert(historyRecord);
+                await unitOfWork.SaveChangesAsync();
                 WriteHistory([historyRecord]);
             }
         }
+    }
+
+    public async Task BuyAsset(string? ticker, string? qty, string? price, string? date)
+    {
+        Console.WriteLine("Not yet created");
+    }
+
+    public async Task SeeBoughtAssets()
+    {
+        Console.WriteLine("Not yet created");
     }
 }

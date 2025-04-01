@@ -3,12 +3,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FundMarket.Database;
 
-public class StockMarketContext : DbContext
+public class StockMarketContext(DbContextOptions options) : DbContext(options)
 {
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        optionsBuilder.UseSqlite("Data Source=StockMarket.db");
-    }
+    //public virtual DbSet<Ticker> Tickers { get; set; }
+
+    //public virtual DbSet<AssetPurchase> AssetPurchases { get; set; }
 
     public virtual DbSet<HistoryRecord> HistoryRecords { get; set; }
 }
