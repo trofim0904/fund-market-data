@@ -2,7 +2,7 @@ using System.Linq.Expressions;
 
 namespace FundMarket.Database.Repository;
 
-public interface IRepository<T> : IDisposable where T : class
+public interface IRepository<T> : IAsyncDisposable where T : class
 {
     IEnumerable<T> Get();
 
@@ -15,4 +15,6 @@ public interface IRepository<T> : IDisposable where T : class
     void Update(T record);
 
     void Save();
+
+    Task SaveAsync();
 }
