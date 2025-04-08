@@ -6,6 +6,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <RootNamespace>FundMarket</RootNamespace>
+        <NoWarn>$(NoWarn);NETSDK1206</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
@@ -14,6 +15,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\FundMarket.Database\FundMarket.Database.csproj" />
+      <ProjectReference Include="..\FundMarket.Helper\FundMarket.Helper.csproj" />
       <ProjectReference Include="..\FundMarket.Mapper\FundMarket.Mapper.csproj" />
       <ProjectReference Include="..\FundMarket.Reader\FundMarket.Reader.csproj" />
     </ItemGroup>
