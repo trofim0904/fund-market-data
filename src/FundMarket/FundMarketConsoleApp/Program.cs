@@ -2,40 +2,41 @@
 using FundMarket.Database;
 using Microsoft.EntityFrameworkCore;
 
-string? userInput;
-
 DbContextOptionsBuilder optionsBuilder = new();
 optionsBuilder.UseSqlite("Data Source=StockMarket.db");
 StockMarketContext context = new StockMarketContext(optionsBuilder.Options);
 UnitOfWork unitOfWork = new UnitOfWork(context);
 StockService stockService = new StockService(unitOfWork);
+bool isRunning = true;
 
-do
+Console.WriteLine("Welcome to Fund Market Console App");
+while (isRunning)
 {
-    Console.WriteLine("Welcome to Fund Market Console App");
-    Console.WriteLine("1. Load More Data");
-    Console.WriteLine("2. See Recent Data");
-    Console.WriteLine("3. See Ticker");
-    Console.WriteLine("4. Buy Asset");
-    Console.WriteLine("5. See bought assets");
-    Console.WriteLine("9. Clear Console");
-    Console.WriteLine("0. Exit");
-    userInput = Console.ReadLine();
+    PrintMenu();
+    var userInput = Console.ReadLine();
     switch (userInput)
     {
         case "0":
+            isRunning = false;
             break;
         case "1":
-            await stockService.LoadData();
+            Console.Write("Input ticker/tickers: ");
+            await stockService.AddTickerAsync(Console.ReadLine());
             break;
         case "2":
-            stockService.SeeRecentData();
+            stockService.SeeTickers();
             break;
         case "3":
+            await stockService.LoadData();
+            break;
+        case "4":
+            stockService.SeeRecentData();
+            break;
+        case "5":
             Console.Write("Input ticker: ");
             await stockService.SeeTicker(Console.ReadLine());
             break;
-        case "4":
+        case "6":
             Console.Write("Input ticker: ");
             string? ticker = Console.ReadLine();
             Console.Write("Input qty: ");
@@ -46,15 +47,34 @@ do
             string? date = Console.ReadLine();
             await stockService.BuyAsset(ticker, qty, price, date);
             break;
-        case "5":
-            await stockService.SeeBoughtAssets();
+        case "7":
+            stockService.SeeBoughtAssets();
+            break;
+        case "8":
+            Console.WriteLine("Input amount to invest");
+            await stockService.RecommendAssetsAsync(Console.ReadLine());
             break;
         case "9":
             Console.Clear();
             break;
         default:
-            Console.WriteLine("Invalid Input");
+            Console.WriteLine("Invalid input, please try again.");
             break;
     }
     Console.WriteLine();
-} while (userInput != "0");
+}
+return;
+
+static void PrintMenu()
+{
+    Console.WriteLine("1. Add Ticker");
+    Console.WriteLine("2. See Added Tickers");
+    Console.WriteLine("3. Load More Data");
+    Console.WriteLine("4. See Recent Data");
+    Console.WriteLine("5. See Ticker");
+    Console.WriteLine("6. Buy Asset");
+    Console.WriteLine("7. See Bought Assets");
+    Console.WriteLine("8. Recommend Assets to Buy");
+    Console.WriteLine("9. Clear Console");
+    Console.WriteLine("0. Exit");
+}
