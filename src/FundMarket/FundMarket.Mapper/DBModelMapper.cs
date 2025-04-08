@@ -5,20 +5,6 @@ namespace FundMarket.Mapper;
 
 public static class DBModelMapper
 {
-    public static HistoryRecord MapHistoryRecord(Asset asset)
-    {
-        return new HistoryRecord
-        {
-            Id = Guid.NewGuid(),
-            Ticker = asset.Ticker,
-            Date = DateTime.UtcNow,
-            Change = asset.Change,
-            CurrentPrice = asset.CurrentPrice,
-            FuturePrice = asset.FuturePrice,
-            MarketCap = asset.MarketCap
-        };
-    }
-
     public static Ticker MapTickerRecord(Asset asset)
     {
         return new Ticker

@@ -6,7 +6,7 @@ DbContextOptionsBuilder optionsBuilder = new();
 optionsBuilder.UseSqlite("Data Source=StockMarket.db");
 StockMarketContext context = new StockMarketContext(optionsBuilder.Options);
 UnitOfWork unitOfWork = new UnitOfWork(context);
-StockService stockService = new StockService(unitOfWork);
+StockConsoleService stockService = new StockConsoleService(unitOfWork);
 bool isRunning = true;
 
 Console.WriteLine("Welcome to Fund Market Console App");
@@ -21,20 +21,19 @@ while (isRunning)
             break;
         case "1":
             Console.Write("Input ticker/tickers: ");
-            await stockService.AddTickerAsync(Console.ReadLine());
+            await stockService.AddTickersAsync(Console.ReadLine());
             break;
         case "2":
             stockService.SeeTickers();
             break;
         case "3":
-            await stockService.LoadData();
             break;
         case "4":
-            stockService.SeeRecentData();
+            await stockService.SeeCurrentData();
             break;
         case "5":
             Console.Write("Input ticker: ");
-            await stockService.SeeTicker(Console.ReadLine());
+            await stockService.SeeTickerData(Console.ReadLine());
             break;
         case "6":
             Console.Write("Input ticker: ");
@@ -69,8 +68,7 @@ static void PrintMenu()
 {
     Console.WriteLine("1. Add Ticker");
     Console.WriteLine("2. See Added Tickers");
-    Console.WriteLine("3. Load More Data");
-    Console.WriteLine("4. See Recent Data");
+    Console.WriteLine("4. See Current Market Data");
     Console.WriteLine("5. See Ticker");
     Console.WriteLine("6. Buy Asset");
     Console.WriteLine("7. See Bought Assets");

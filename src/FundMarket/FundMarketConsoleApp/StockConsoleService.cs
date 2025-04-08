@@ -1,0 +1,274 @@
+using System.Globalization;
+using System.Text;
+using FundMarket.Database;
+using FundMarket.Database.Models;
+using FundMarket.Mapper;
+using FundMarket.Reader.Logic;
+using FundMarket.Reader.Model;
+
+namespace FundMarket;
+
+public class StockConsoleService(UnitOfWork unitOfWork)
+{
+    /// <summary>
+    /// Adds one or multiple ticker symbols to the system. Each ticker is validated using an external data source.
+    /// Duplicate tickers will be skipped.
+    /// </summary>
+    /// <param name="input">
+    /// A string containing one or more ticker symbols separated by semicolons (e.g., "AAPL;TSLA;MSFT").
+    /// </param>
+    public async Task AddTickersAsync(string? input)
+    {
+        const char delimiter = ';';
+        if (input != null)
+        {
+            List<string> tickers = new List<string>();
+            if (input.Contains(delimiter))
+            {
+                tickers.AddRange(input.Split(delimiter));
+            }
+            else
+            {
+                tickers.Add(input);
+            }
+            foreach (var raw in tickers)
+            {
+                await AddTicker(raw);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Displays all saved ticker symbols from the database in the console.
+    /// </summary>
+    public void SeeTickers()
+    {
+        foreach (var ticker in unitOfWork.TickerRepository.Get())
+        {
+            Console.WriteLine(ticker);
+        }
+    }
+
+    /// <summary>
+    /// Retrieves today's stock data for all tickers from the database 
+    /// and outputs each asset to the console.
+    /// </summary>
+    public async Task SeeCurrentData()
+    {
+        var assets = await LoadGeneralStockData();
+        foreach (var asset in assets.OrderByDescending(a => a.MarketCap))
+        {
+            Console.WriteLine(asset);
+        }
+    }
+
+    /// <summary>
+    /// Fetches and displays current stock data for the specified ticker symbol.
+    /// </summary>
+    /// <param name="ticker">The stock ticker symbol (e.g., "AAPL", "TSLA").</param>
+    public async Task SeeTickerData(string? ticker)
+    {
+        if (ticker != null)
+        {
+            IAssetReader reader = new YahooHtmlPageReader();
+            Asset? asset = null;
+            try
+            {
+                asset = await reader.GetAssetAsync(ticker);
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("No price for ticker");
+            }
+            if (asset != null)
+            {
+                Console.WriteLine(asset);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Records a purchase of an asset by saving the ticker, quantity, price, and date to the database.
+    /// </summary>
+    /// <param name="ticker">The stock ticker symbol (e.g., "AAPL").</param>
+    /// <param name="qty">The quantity of the asset to purchase.</param>
+    /// <param name="price">The price per unit of the asset.</param>
+    /// <param name="date">The purchase date in a valid format (e.g., "yyyy-MM-dd").</param>
+    public async Task BuyAsset(string? ticker, string? qty, string? price, string? date)
+    {
+        ticker = ticker?.ToUpper();
+        if (unitOfWork.TickerRepository.Get(t => t.Name == ticker).Any())
+        {
+            try
+            {
+                decimal.TryParse(qty, NumberStyles.Any, CultureInfo.InvariantCulture, out var qtyDecimal);
+                decimal.TryParse(price, NumberStyles.Any, CultureInfo.InvariantCulture, out var priceDecimal);
+                DateTime.TryParse(date, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dateTime);
+                unitOfWork.PurchaseRepository.Insert(DBModelMapper.MapPurchase(ticker,qtyDecimal, priceDecimal, dateTime));
+                await unitOfWork.SaveChangesAsync();
+                Console.WriteLine($"Added {qtyDecimal} of {ticker}");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Error: " + e.Message);
+            }
+
+        }
+        else
+        {
+            Console.WriteLine("Invalid ticker");
+        }
+    }
+
+    public async Task SeeBoughtAssets()
+    {
+        var assets = unitOfWork.PurchaseRepository.Get().ToList();
+        if (assets.Count != 0)
+        {
+            var stockData = await LoadGeneralStockData();
+            var grouped = assets
+                .GroupBy(a => a.Ticker)
+                .Select(g => new
+                {
+                    Ticker = g.Key, 
+                    Qty = g.Sum(a => a.Qty),
+                    AvgPrice = GetAvgPrice(g.ToList()),
+                    PurchaseTotal = g.Sum(a => a.Qty * a.Price)
+                });
+            var pnl = decimal.Zero;
+            foreach (var total in grouped)
+            {
+                var current = stockData.FirstOrDefault(h => h.Ticker == total.Ticker);
+                var currentPrice = current?.CurrentPrice ?? decimal.Zero;
+                var currentTotal = currentPrice * total.Qty;
+                var diff = currentTotal - total.PurchaseTotal;
+                pnl += diff;
+                Console.WriteLine($"Asset: {total.Ticker,-10} | Qty: {total.Qty,5} | Avg Price: {total.AvgPrice,10} | Purchase Total: {total.PurchaseTotal,15} | Current Market Price: {currentPrice,15} | Current Market Value: {currentTotal,15} | Difference: {diff, 10}");
+            }
+            Console.WriteLine($"Total PnL: ${decimal.Round(pnl,2)}");
+        }
+    }
+
+    public async Task RecommendAssetsAsync(string? input)
+    {
+        try 
+        {
+            decimal.TryParse(input, out decimal amt);
+            var tickets = unitOfWork.TickerRepository.Get().ToList();
+            var purchases = unitOfWork.PurchaseRepository.Get().ToList();
+            var historyRecords = await LoadGeneralStockData();
+            // TODO: move to static class and return list of objects
+            // all tickets must be bought
+            var notBoughtTickets = tickets
+                .Select(t => t.Name)
+                .Except(purchases
+                    .DistinctBy(p => p.Ticker)
+                    .Select(p => p.Ticker))
+                .ToList();
+            if (notBoughtTickets.Count > 0)
+            {
+                foreach (var notBoughtTicket in notBoughtTickets)
+                {
+                    var lastHistoryRecord = historyRecords.FirstOrDefault(h => h.Ticker == notBoughtTicket);
+                    if (lastHistoryRecord != null)
+                    {
+                        if (amt >= lastHistoryRecord.CurrentPrice)
+                        {
+                            var maxQty = Math.Floor(amt / lastHistoryRecord.CurrentPrice);
+                            BuyTicketRecommendation(notBoughtTicket, maxQty);
+                            return;
+                        }
+                    }
+                }
+                Console.WriteLine("Cannot recommend assets. Increase invest amount");
+                return;
+            }
+            // TODO: next logic step
+            throw new NotImplementedException();
+            Console.WriteLine("Cannot recommend assets. Increase invest amount");
+        }
+        catch (Exception)
+        {
+            //throw;
+            Console.WriteLine("Error: not able to get assets");
+        }
+    }
+
+    /// <summary>
+    /// Attempts to add a new ticker symbol to the system. 
+    /// Retrieves the asset data from Yahoo and saves it if the ticker does not already exist.
+    /// </summary>
+    /// <param name="raw">The raw ticker input string, which will be trimmed and normalized.</param>
+    private async Task AddTicker(string raw)
+    {
+        var ticker = raw.Trim().ToUpper();
+        if (string.IsNullOrWhiteSpace(ticker))
+        {
+            return;
+        }
+        YahooHtmlPageReader reader = new YahooHtmlPageReader();
+        try
+        {
+            var asset = await reader.GetAssetAsync(ticker);
+            if (unitOfWork.TickerRepository.Get(t => t.Name == asset.Ticker).Any())
+            {
+                Console.WriteLine($"Ticker '{ticker}' already exists.");
+            }
+            else
+            {
+                unitOfWork.TickerRepository.Insert(DBModelMapper.MapTickerRecord(asset));
+                await unitOfWork.SaveChangesAsync();
+                Console.WriteLine($"Ticker '{ticker}' added.");
+            }
+        }
+        catch (Exception)
+        {
+            Console.WriteLine($"No price found for ticker '{ticker}'.");
+        }
+    }
+
+    /// <summary>
+    /// Loads general stock data by retrieving assets for all tickers available in the repository.
+    /// Uses an <see cref="IAssetReader"/> to fetch data asynchronously.
+    /// </summary>
+    /// <returns>
+    /// A task that represents the asynchronous operation. The task result contains an array
+    /// of <see cref="Asset"/> objects.
+    /// </returns>
+    private async Task<Asset[]> LoadGeneralStockData()
+    {
+        IAssetReader reader = new YahooHtmlPageReader();
+        List<Task<Asset>> tasks = [];
+        foreach (var ticker in unitOfWork.TickerRepository.Get())
+        {
+            if (ticker.Name != null)
+            {
+                tasks.Add(reader.GetAssetAsync(ticker.Name));
+            }
+        }
+        var assets = await Task.WhenAll(tasks);
+        return assets;
+    }
+
+    private decimal GetAvgPrice(List<AssetPurchase> list)
+    {
+        decimal total = decimal.Zero;
+        decimal totalQty = decimal.Zero;
+        foreach (var purchase in list)
+        {
+            totalQty += purchase.Qty;
+            total += purchase.Qty * purchase.Price;
+        }
+        return decimal.Round(total / totalQty, 3);
+    }
+
+    /// <summary>
+    /// Outputs a recommendation to buy a specific stock (ticker) for the given amount.
+    /// </summary>
+    /// <param name="ticker">The stock ticker symbol (e.g., "AAPL", "TSLA").</param>
+    /// <param name="qty">The recommended qty to invest.</param>
+    private void BuyTicketRecommendation(string? ticker, decimal qty)
+    {
+        Console.WriteLine($"Recommendation. Buy {qty} shares of ticker {ticker}.");
+    }
+}
