@@ -1,14 +1,13 @@
 using System.Globalization;
-using System.Text;
 using FundMarket.Database;
-using FundMarket.Database.Models;
+using FundMarket.Helper;
 using FundMarket.Mapper;
 using FundMarket.Reader.Logic;
 using FundMarket.Reader.Model;
 
 namespace FundMarket;
 
-public class StockConsoleService(UnitOfWork unitOfWork)
+public class StockConsoleService(UnitOfWork unitOfWork) : GeneralStockService
 {
     /// <summary>
     /// Adds one or multiple ticker symbols to the system. Each ticker is validated using an external data source.
@@ -55,7 +54,7 @@ public class StockConsoleService(UnitOfWork unitOfWork)
     /// </summary>
     public async Task SeeCurrentData()
     {
-        var assets = await LoadGeneralStockData();
+        var assets = await LoadGeneralStockData(unitOfWork);
         foreach (var asset in assets.OrderByDescending(a => a.MarketCap))
         {
             Console.WriteLine(asset);
@@ -120,35 +119,32 @@ public class StockConsoleService(UnitOfWork unitOfWork)
         }
     }
 
+    /// <summary>
+    /// Displays a summary of all purchased assets, including quantity, average price, current price,
+    /// and profit or loss (PnL) for each asset. Also prints the total PnL across all assets.
+    /// </summary>
     public async Task SeeBoughtAssets()
     {
         var assets = unitOfWork.PurchaseRepository.Get().ToList();
         if (assets.Count != 0)
         {
-            var stockData = await LoadGeneralStockData();
-            var grouped = assets
-                .GroupBy(a => a.Ticker)
-                .Select(g => new
-                {
-                    Ticker = g.Key, 
-                    Qty = g.Sum(a => a.Qty),
-                    AvgPrice = GetAvgPrice(g.ToList()),
-                    PurchaseTotal = g.Sum(a => a.Qty * a.Price)
-                });
+            var assetSummaries = await GetAssetSummary(unitOfWork, assets);
             var pnl = decimal.Zero;
-            foreach (var total in grouped)
+            foreach (var summary in assetSummaries.OrderByDescending(s => s.Difference))
             {
-                var current = stockData.FirstOrDefault(h => h.Ticker == total.Ticker);
-                var currentPrice = current?.CurrentPrice ?? decimal.Zero;
-                var currentTotal = currentPrice * total.Qty;
-                var diff = currentTotal - total.PurchaseTotal;
-                pnl += diff;
-                Console.WriteLine($"Asset: {total.Ticker,-10} | Qty: {total.Qty,5} | Avg Price: {total.AvgPrice,10} | Purchase Total: {total.PurchaseTotal,15} | Current Market Price: {currentPrice,15} | Current Market Value: {currentTotal,15} | Difference: {diff, 10}");
+                pnl += summary.Difference ?? decimal.Zero;
+                Console.WriteLine(summary);
             }
-            Console.WriteLine($"Total PnL: ${decimal.Round(pnl,2)}");
+            Console.WriteLine($"Total PnL: ${pnl:F2}");
         }
     }
 
+    /// <summary>
+    /// Recommends assets to buy based on the specified amount. 
+    /// The method parses the input as a decimal amount and applies internal recommendation logic.
+    /// </summary>
+    /// <param name="input">The investment amount as a string (e.g., "1000").</param>
+    /// <returns>A task representing the asynchronous recommendation operation.</returns>
     public async Task RecommendAssetsAsync(string? input)
     {
         try 
@@ -156,7 +152,7 @@ public class StockConsoleService(UnitOfWork unitOfWork)
             decimal.TryParse(input, out decimal amt);
             var tickets = unitOfWork.TickerRepository.Get().ToList();
             var purchases = unitOfWork.PurchaseRepository.Get().ToList();
-            var historyRecords = await LoadGeneralStockData();
+            var historyRecords = await LoadGeneralStockData(unitOfWork);
             // TODO: move to static class and return list of objects
             // all tickets must be bought
             var notBoughtTickets = tickets
@@ -185,7 +181,7 @@ public class StockConsoleService(UnitOfWork unitOfWork)
             }
             // TODO: next logic step
             throw new NotImplementedException();
-            Console.WriteLine("Cannot recommend assets. Increase invest amount");
+            //Console.WriteLine("Cannot recommend assets. Increase invest amount");
         }
         catch (Exception)
         {
@@ -225,41 +221,6 @@ public class StockConsoleService(UnitOfWork unitOfWork)
         {
             Console.WriteLine($"No price found for ticker '{ticker}'.");
         }
-    }
-
-    /// <summary>
-    /// Loads general stock data by retrieving assets for all tickers available in the repository.
-    /// Uses an <see cref="IAssetReader"/> to fetch data asynchronously.
-    /// </summary>
-    /// <returns>
-    /// A task that represents the asynchronous operation. The task result contains an array
-    /// of <see cref="Asset"/> objects.
-    /// </returns>
-    private async Task<Asset[]> LoadGeneralStockData()
-    {
-        IAssetReader reader = new YahooHtmlPageReader();
-        List<Task<Asset>> tasks = [];
-        foreach (var ticker in unitOfWork.TickerRepository.Get())
-        {
-            if (ticker.Name != null)
-            {
-                tasks.Add(reader.GetAssetAsync(ticker.Name));
-            }
-        }
-        var assets = await Task.WhenAll(tasks);
-        return assets;
-    }
-
-    private decimal GetAvgPrice(List<AssetPurchase> list)
-    {
-        decimal total = decimal.Zero;
-        decimal totalQty = decimal.Zero;
-        foreach (var purchase in list)
-        {
-            totalQty += purchase.Qty;
-            total += purchase.Qty * purchase.Price;
-        }
-        return decimal.Round(total / totalQty, 3);
     }
 
     /// <summary>

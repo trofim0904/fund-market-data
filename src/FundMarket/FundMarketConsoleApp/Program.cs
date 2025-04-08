@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 DbContextOptionsBuilder optionsBuilder = new();
 optionsBuilder.UseSqlite("Data Source=StockMarket.db");
-StockMarketContext context = new StockMarketContext(optionsBuilder.Options);
+await using StockMarketContext context = new StockMarketContext(optionsBuilder.Options);
 UnitOfWork unitOfWork = new UnitOfWork(context);
 StockConsoleService stockService = new StockConsoleService(unitOfWork);
 bool isRunning = true;
@@ -47,7 +47,7 @@ while (isRunning)
             await stockService.BuyAsset(ticker, qty, price, date);
             break;
         case "7":
-            stockService.SeeBoughtAssets();
+            await stockService.SeeBoughtAssets();
             break;
         case "8":
             Console.WriteLine("Input amount to invest");
