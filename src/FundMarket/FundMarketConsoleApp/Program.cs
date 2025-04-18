@@ -22,18 +22,22 @@ while (isRunning)
         case "1":
             Console.Write("Input ticker/tickers: ");
             await stockService.AddTickersAsync(Console.ReadLine());
+            Pause();
             break;
         case "2":
             stockService.SeeTickers();
+            Pause();
             break;
         case "3":
             break;
         case "4":
             await stockService.SeeCurrentData();
+            Pause();
             break;
         case "5":
             Console.Write("Input ticker: ");
             await stockService.SeeTickerData(Console.ReadLine());
+            Pause();
             break;
         case "6":
             Console.Write("Input ticker: ");
@@ -45,13 +49,16 @@ while (isRunning)
             Console.Write("Input date: ");
             string? date = Console.ReadLine();
             await stockService.BuyAsset(ticker, qty, price, date);
+            Pause();
             break;
         case "7":
             await stockService.SeeBoughtAssets();
+            Pause();
             break;
         case "8":
             Console.WriteLine("Input amount to invest");
             await stockService.RecommendAssetsAsync(Console.ReadLine());
+            Pause();
             break;
         case "9":
             Console.Clear();
@@ -75,4 +82,10 @@ static void PrintMenu()
     Console.WriteLine("8. Recommend Assets to Buy");
     Console.WriteLine("9. Clear Console");
     Console.WriteLine("0. Exit");
+}
+
+void Pause()
+{
+    Console.WriteLine("Enter any key to continue...");
+    Console.ReadKey();
 }

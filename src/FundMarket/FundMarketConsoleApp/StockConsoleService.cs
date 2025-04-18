@@ -1,6 +1,7 @@
 using System.Globalization;
 using FundMarket.Database;
 using FundMarket.Helper;
+using FundMarket.Helper.Models;
 using FundMarket.Mapper;
 using FundMarket.Reader.Logic;
 using FundMarket.Reader.Model;
@@ -150,43 +151,15 @@ public class StockConsoleService(UnitOfWork unitOfWork) : GeneralStockService
         try 
         {
             decimal.TryParse(input, out decimal amt);
-            var tickets = unitOfWork.TickerRepository.Get().ToList();
-            var purchases = unitOfWork.PurchaseRepository.Get().ToList();
-            var historyRecords = await LoadGeneralStockData(unitOfWork);
-            // TODO: move to static class and return list of objects
-            // all tickets must be bought
-            var notBoughtTickets = tickets
-                .Select(t => t.Name)
-                .Except(purchases
-                    .DistinctBy(p => p.Ticker)
-                    .Select(p => p.Ticker))
-                .ToList();
-            if (notBoughtTickets.Count > 0)
+            var recommendations = await GetAssetRecommendations(unitOfWork, amt);
+            foreach (var recommendation in recommendations)
             {
-                foreach (var notBoughtTicket in notBoughtTickets)
-                {
-                    var lastHistoryRecord = historyRecords.FirstOrDefault(h => h.Ticker == notBoughtTicket);
-                    if (lastHistoryRecord != null)
-                    {
-                        if (amt >= lastHistoryRecord.CurrentPrice)
-                        {
-                            var maxQty = Math.Floor(amt / lastHistoryRecord.CurrentPrice);
-                            BuyTicketRecommendation(notBoughtTicket, maxQty);
-                            return;
-                        }
-                    }
-                }
-                Console.WriteLine("Cannot recommend assets. Increase invest amount");
-                return;
+                BuyTicketRecommendation(recommendation);
             }
-            // TODO: next logic step
-            throw new NotImplementedException();
-            //Console.WriteLine("Cannot recommend assets. Increase invest amount");
         }
-        catch (Exception)
+        catch (Exception e)
         {
-            //throw;
-            Console.WriteLine("Error: not able to get assets");
+            Console.WriteLine("Error: not able to get assets. " + e.Message);
         }
     }
 
@@ -221,6 +194,15 @@ public class StockConsoleService(UnitOfWork unitOfWork) : GeneralStockService
         {
             Console.WriteLine($"No price found for ticker '{ticker}'.");
         }
+    }
+
+    /// <summary>
+    /// Outputs a recommendation to buy a specific stock (ticker) for the given amount.
+    /// </summary>
+    /// <param name="recommendation">The recommended object of type <see cref="AssetRecommendation"/></param>
+    private void BuyTicketRecommendation(AssetRecommendation recommendation)
+    {
+        BuyTicketRecommendation(recommendation.Ticker, recommendation.Qty);
     }
 
     /// <summary>
