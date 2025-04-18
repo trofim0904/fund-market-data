@@ -4,17 +4,21 @@ public class AssetSummary
 {
     public string? Ticker { get; init; }
 
-    public decimal? Qty { get; init; } 
+    public decimal? Qty { get; set; } 
 
     public decimal? AvgPrice { get; init; } 
 
-    public decimal? PurchaseTotal { get; init; } 
-    
+    public decimal? PurchaseTotal { get; set; } 
+
     public decimal? CurrentPrice { get; init; }
 
     public decimal? CurrentValue => CurrentPrice * Qty;
 
     public decimal? Difference => CurrentValue - PurchaseTotal;
+
+    public decimal? Percent { get; set; }
+
+    public int? Tier { get; set; }
 
     public override string ToString()
     {
