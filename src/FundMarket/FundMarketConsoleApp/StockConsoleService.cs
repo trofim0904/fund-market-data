@@ -43,9 +43,50 @@ public class StockConsoleService(UnitOfWork unitOfWork) : GeneralStockService
     /// </summary>
     public void SeeTickers()
     {
-        foreach (var ticker in unitOfWork.TickerRepository.Get())
+        foreach (var ticker in unitOfWork.TickerRepository.Get()
+                     .OrderBy(t => t.IsIgnored)
+                     .ThenBy(t => t.Name))
         {
             Console.WriteLine(ticker);
+        }
+    }
+
+    public async Task UpdateIgnoreFlag(string? tickerToUpdate)
+    {
+        ArgumentNullException.ThrowIfNull(tickerToUpdate);
+        tickerToUpdate = tickerToUpdate.Trim().ToUpper();
+        var ticker = unitOfWork.TickerRepository
+            .Get(t => t.Name == tickerToUpdate)
+            .FirstOrDefault();
+        if (ticker != null)
+        {
+            ticker.IsIgnored = !(ticker.IsIgnored ?? false);
+            unitOfWork.TickerRepository.Update(ticker);
+            await unitOfWork.SaveChangesAsync();
+            Console.WriteLine("Ticker flag updated.");
+        }
+        else
+        {
+            Console.WriteLine("Ticker not found.");
+        }
+    }
+
+    public async Task DeleteTicker(string? tickerToUpdate)
+    {
+        ArgumentNullException.ThrowIfNull(tickerToUpdate);
+        tickerToUpdate = tickerToUpdate.Trim().ToUpper();
+        var ticker = unitOfWork.TickerRepository
+            .Get(t => t.Name == tickerToUpdate)
+            .FirstOrDefault();
+        if (ticker != null)
+        {
+            unitOfWork.TickerRepository.Delete(ticker);
+            await unitOfWork.SaveChangesAsync();
+            Console.WriteLine("Ticker deleted.");
+        }
+        else
+        {
+            Console.WriteLine("Ticker not found.");
         }
     }
 

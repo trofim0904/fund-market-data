@@ -29,6 +29,18 @@ while (isRunning)
             Pause();
             break;
         case "3":
+            Console.Write("Input ticker to update: ");
+            var tickerToUpdate = Console.ReadLine();
+            Console.Write("Do you want to update ignore flag? y/n: ");
+            if (Console.ReadLine() == "y")
+            {
+                await stockService.UpdateIgnoreFlag(tickerToUpdate);
+            }
+            Console.Write("Do you want to delete ticker? y/n: ");
+            if (Console.ReadLine() == "y")
+            {
+                await stockService.DeleteTicker(tickerToUpdate);
+            }
             break;
         case "4":
             await stockService.SeeCurrentData();
@@ -75,6 +87,7 @@ static void PrintMenu()
 {
     Console.WriteLine("1. Add Ticker");
     Console.WriteLine("2. See Added Tickers");
+    Console.WriteLine("3. Update Tickers");
     Console.WriteLine("4. See Current Market Data");
     Console.WriteLine("5. See Ticker");
     Console.WriteLine("6. Buy Asset");

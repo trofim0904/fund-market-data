@@ -7,7 +7,9 @@ public class Ticker
     public Guid Id { get; init; }
 
     [MaxLength(10)]
-    public string? Name { get; init; }
+    public required string Name { get; init; }
 
-    public override string ToString() => $"Ticker: {Name,-5}";
+    public bool? IsIgnored { get; set; }
+
+    public override string ToString() => $"Ticker: {Name,-5} Ignored: {IsIgnored ?? false}";
 }

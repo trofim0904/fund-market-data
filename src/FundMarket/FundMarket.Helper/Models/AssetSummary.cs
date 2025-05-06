@@ -24,7 +24,7 @@ public class AssetSummary
     {
         return
             $"Ticker: {Ticker, -5} | " +
-            $"Qty: {Qty,5} | " +
+            $"Qty: {Qty,5:F2} | " +
             $"Avg Price: {AvgPrice,7:F2} | " +
             $"Purchase Total: {PurchaseTotal,10:F2} | " +
             $"Current Price: {CurrentPrice,7:F2} | " +
