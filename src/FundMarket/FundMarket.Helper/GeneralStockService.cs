@@ -101,10 +101,11 @@ public abstract class GeneralStockService
     /// <exception cref="Exception">Thrown if no assets can be recommended with the provided amount.</exception>
     protected async Task<IEnumerable<AssetRecommendation>> GetAssetRecommendations(UnitOfWork unitOfWork, decimal amt)
     {
-        const int tiers = 8;
+        const int tiers = 5;
         var result = new List<AssetRecommendation>();
         var summary = new List<AssetSummary>();
-        var tickers = unitOfWork.TickerRepository.Get().ToList();
+        var tickersToIgnore = unitOfWork.TickerRepository.Get(t => t.IsIgnored == true).ToList();
+        var tickers = unitOfWork.TickerRepository.Get(t => t.IsIgnored != true).ToList();
         var purchases = unitOfWork.PurchaseRepository.Get().ToList();
         var stockData = await LoadGeneralStockData(unitOfWork);
         // Determine tickers not yet bought
@@ -134,6 +135,7 @@ public abstract class GeneralStockService
         }
         // Add existing purchase summaries
         summary.AddRange(GetAssetSummary(purchases, stockData.ToList()));
+        summary = summary.Where(s => tickersToIgnore.All(t => t.Name != s.Ticker)).ToList();
         var maxMarketCap = stockData.Max(d => d.MarketCap);
         var minMarketCap = stockData.Min(d => d.MarketCap);
         // Iteratively recommend assets until no more valid recommendations can be made
