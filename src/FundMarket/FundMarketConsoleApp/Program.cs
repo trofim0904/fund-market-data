@@ -52,28 +52,21 @@ while (isRunning)
             Pause();
             break;
         case "6":
-            Console.Write("Input ticker: ");
-            string? ticker = Console.ReadLine();
-            Console.Write("Input qty: ");
-            string? qty = Console.ReadLine();
-            Console.Write("Input price: ");
-            string? price = Console.ReadLine();
-            Console.Write("Input date: ");
-            string? date = Console.ReadLine();
-            await stockService.BuyAsset(ticker, qty, price, date);
+            await BuyAsset(stockService);
             Pause();
             break;
         case "7":
-            await stockService.SeeBoughtAssets();
+            await SellAsset(stockService);
             Pause();
             break;
         case "8":
-            Console.WriteLine("Input amount to invest");
-            await stockService.RecommendAssetsAsync(Console.ReadLine());
+            await stockService.SeeBoughtAssets();
             Pause();
             break;
         case "9":
-            Console.Clear();
+            Console.WriteLine("Input amount to invest");
+            await stockService.RecommendAssetsAsync(Console.ReadLine());
+            Pause();
             break;
         default:
             Console.WriteLine("Invalid input, please try again.");
@@ -91,9 +84,9 @@ static void PrintMenu()
     Console.WriteLine("4. See Current Market Data");
     Console.WriteLine("5. See Ticker");
     Console.WriteLine("6. Buy Asset");
-    Console.WriteLine("7. See Bought Assets");
-    Console.WriteLine("8. Recommend Assets to Buy");
-    Console.WriteLine("9. Clear Console");
+    Console.WriteLine("7. Sell Asset");
+    Console.WriteLine("8. See Bought Assets");
+    Console.WriteLine("9. Recommend Assets to Buy");
     Console.WriteLine("0. Exit");
 }
 
@@ -101,4 +94,30 @@ void Pause()
 {
     Console.WriteLine("Enter any key to continue...");
     Console.ReadKey();
+}
+
+async Task BuyAsset(StockConsoleService stockConsoleService)
+{
+    Console.Write("Input ticker: ");
+    string? ticker = Console.ReadLine();
+    Console.Write("Input qty: ");
+    string? qty = Console.ReadLine();
+    Console.Write("Input price: ");
+    string? price = Console.ReadLine();
+    Console.Write("Input date (yyyy-MM-dd): ");
+    string? date = Console.ReadLine();
+    await stockConsoleService.BuyAsset(ticker, qty, price, date);
+}
+
+async Task SellAsset(StockConsoleService stockConsoleService)
+{
+    Console.Write("Input ticker: ");
+    string? ticker = Console.ReadLine();
+    Console.Write("Input qty: ");
+    string? qty = Console.ReadLine();
+    Console.Write("Input price: ");
+    string? price = Console.ReadLine();
+    Console.Write("Input date (yyyy-MM-dd): ");
+    string? date = Console.ReadLine();
+    await stockConsoleService.SellAsset(ticker, qty, price, date);
 }

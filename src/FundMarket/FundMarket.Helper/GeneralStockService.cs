@@ -40,14 +40,16 @@ public abstract class GeneralStockService
     /// total investment, and current market price for each ticker.
     /// </summary>
     /// <param name="unitOfWork">The unit of work used to load current stock data.</param>
-    /// <param name="assets">A list of asset purchases grouped by ticker.</param>
+    /// <param name="purchases">A list of asset purchases grouped by ticker.</param>
+    /// <param name="sales"></param>
     /// <returns>
     /// A task that returns a collection of <see cref="AssetSummary"/> representing the current portfolio snapshot.
     /// </returns>
-    protected async Task<IEnumerable<AssetSummary>> GetAssetSummary(UnitOfWork unitOfWork, List<AssetPurchase> assets)
+    protected async Task<IEnumerable<AssetSummary>> GetAssetSummary(UnitOfWork unitOfWork, List<AssetPurchase> purchases,
+        List<AssetSale> sales)
     {
         var stockData = await LoadGeneralStockData(unitOfWork);
-        return GetAssetSummary(assets, stockData.ToList());
+        return GetAssetSummary(purchases, sales, stockData.ToList());
     }
 
     /// <summary>
@@ -55,20 +57,22 @@ public abstract class GeneralStockService
     /// total investment, and current market price for each ticker.
     /// </summary>
     /// <param name="assets">A list of asset purchases grouped by ticker.</param>
+    /// <param name="purchases"></param>
     /// <param name="stockData">A list of stock data statistic.</param>
     /// <returns>
     /// Collection of <see cref="AssetSummary"/> representing the current portfolio snapshot.
     /// </returns>
-    protected IEnumerable<AssetSummary> GetAssetSummary(List<AssetPurchase> assets, List<Asset> stockData)
+    protected IEnumerable<AssetSummary> GetAssetSummary(List<AssetPurchase> purchases, List<AssetSale> sales,
+        List<Asset> stockData)
     {
-        var assetSummaries = assets
+        var assetSummaries = purchases
             .GroupBy(a => a.Ticker)
             .Select(g => new AssetSummary
             {
                 Ticker = g.Key,
-                Qty = g.Sum(a => a.Qty),
+                Qty = g.Sum(a => a.Qty) - sales.Where(s => s.Ticker == g.Key).Sum(s => s.Qty),
                 AvgPrice = GetAvgPrice(g.ToList()),
-                PurchaseTotal = g.Sum(a => a.Qty * a.Price),
+                PurchaseTotal = g.Sum(a => a.Qty * a.Price) - sales.Where(s => s.Ticker == g.Key).Sum(s => s.Qty * s.Price),
                 CurrentPrice = stockData.FirstOrDefault(d => d.Ticker == g.Key)?.CurrentPrice ?? decimal.Zero,
             });
         return assetSummaries;
@@ -107,6 +111,7 @@ public abstract class GeneralStockService
         var tickersToIgnore = unitOfWork.TickerRepository.Get(t => t.IsIgnored == true).ToList();
         var tickers = unitOfWork.TickerRepository.Get(t => t.IsIgnored != true).ToList();
         var purchases = unitOfWork.PurchaseRepository.Get().ToList();
+        var sales = unitOfWork.SaleRepository.Get().ToList();
         var stockData = await LoadGeneralStockData(unitOfWork);
         // Determine tickers not yet bought
         var notBoughtTickers = tickers
@@ -134,7 +139,7 @@ public abstract class GeneralStockService
             }
         }
         // Add existing purchase summaries
-        summary.AddRange(GetAssetSummary(purchases, stockData.ToList()));
+        summary.AddRange(GetAssetSummary(purchases, sales, stockData.ToList()));
         summary = summary.Where(s => tickersToIgnore.All(t => t.Name != s.Ticker)).ToList();
         var maxMarketCap = stockData.Max(d => d.MarketCap);
         var minMarketCap = stockData.Min(d => d.MarketCap);

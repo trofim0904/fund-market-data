@@ -24,4 +24,16 @@ public static class DBModelMapper
             Date = dateTime,
         };
     }
+
+    public static AssetSale MapSale(string? ticker, decimal qtyDecimal, decimal priceDecimal, DateTime dateTime)
+    {
+        return new AssetSale
+        {
+            Id = Guid.NewGuid(),
+            Ticker = ticker,
+            Qty = qtyDecimal,
+            Price = priceDecimal,
+            Date = dateTime,
+        };
+    }
 }
