@@ -9,6 +9,8 @@ public class UnitOfWork(StockMarketContext stockMarketContext)
 
     public IRepository<AssetPurchase> PurchaseRepository { get; } = new AssetPurchaseRepository(stockMarketContext);
 
+    public IRepository<AssetSale> SaleRepository { get; } = new AssetSalesRepository(stockMarketContext);
+
     public void SaveChanges()
     {
         stockMarketContext.SaveChanges();

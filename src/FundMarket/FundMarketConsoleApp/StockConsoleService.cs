@@ -144,10 +144,42 @@ public class StockConsoleService(UnitOfWork unitOfWork) : GeneralStockService
             {
                 decimal.TryParse(qty, NumberStyles.Any, CultureInfo.InvariantCulture, out var qtyDecimal);
                 decimal.TryParse(price, NumberStyles.Any, CultureInfo.InvariantCulture, out var priceDecimal);
-                DateTime.TryParse(date, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dateTime);
+                if (!DateTime.TryParse(date, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dateTime))
+                {
+                    throw new ArgumentException("Invalid date");
+                }
                 unitOfWork.PurchaseRepository.Insert(DBModelMapper.MapPurchase(ticker,qtyDecimal, priceDecimal, dateTime));
                 await unitOfWork.SaveChangesAsync();
                 Console.WriteLine($"Added {qtyDecimal} of {ticker}");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Error: " + e.Message);
+            }
+
+        }
+        else
+        {
+            Console.WriteLine("Invalid ticker");
+        }
+    }
+    
+    public async Task SellAsset(string? ticker, string? qty, string? price, string? date)
+    {
+        ticker = ticker?.ToUpper();
+        if (unitOfWork.TickerRepository.Get(t => t.Name == ticker).Any())
+        {
+            try
+            {
+                decimal.TryParse(qty, NumberStyles.Any, CultureInfo.InvariantCulture, out var qtyDecimal);
+                decimal.TryParse(price, NumberStyles.Any, CultureInfo.InvariantCulture, out var priceDecimal);
+                if (!DateTime.TryParse(date, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dateTime))
+                {
+                    throw new ArgumentException("Invalid date");
+                }
+                unitOfWork.SaleRepository.Insert(DBModelMapper.MapSale(ticker,qtyDecimal, priceDecimal, dateTime));
+                await unitOfWork.SaveChangesAsync();
+                Console.WriteLine($"Sold {qtyDecimal} of {ticker}");
             }
             catch (Exception e)
             {
@@ -167,10 +199,11 @@ public class StockConsoleService(UnitOfWork unitOfWork) : GeneralStockService
     /// </summary>
     public async Task SeeBoughtAssets()
     {
-        var assets = unitOfWork.PurchaseRepository.Get().ToList();
-        if (assets.Count != 0)
+        var purchases = unitOfWork.PurchaseRepository.Get().ToList();
+        var sales = unitOfWork.SaleRepository.Get().ToList();
+        if (purchases.Count != 0)
         {
-            var assetSummaries = await GetAssetSummary(unitOfWork, assets);
+            var assetSummaries = await GetAssetSummary(unitOfWork, purchases, sales);
             var pnl = decimal.Zero;
             foreach (var summary in assetSummaries.OrderByDescending(s => s.Difference))
             {
