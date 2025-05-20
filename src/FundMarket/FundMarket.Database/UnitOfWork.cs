@@ -5,16 +5,11 @@ namespace FundMarket.Database;
 
 public class UnitOfWork(StockMarketContext stockMarketContext)
 {
-    public IRepository<Ticker> TickerRepository { get; } = new TickerRepository(stockMarketContext);
+    public IRepository<Ticker> TickerRepository { get; } = new Repository<Ticker>(stockMarketContext);
 
-    public IRepository<AssetPurchase> PurchaseRepository { get; } = new AssetPurchaseRepository(stockMarketContext);
+    public IRepository<AssetPurchase> PurchaseRepository { get; } = new Repository<AssetPurchase>(stockMarketContext);
 
-    public IRepository<AssetSale> SaleRepository { get; } = new AssetSalesRepository(stockMarketContext);
-
-    public void SaveChanges()
-    {
-        stockMarketContext.SaveChanges();
-    }
+    public IRepository<AssetSale> SaleRepository { get; } = new Repository<AssetSale>(stockMarketContext);
 
     public Task SaveChangesAsync()
     {

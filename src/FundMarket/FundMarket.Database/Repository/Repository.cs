@@ -2,7 +2,7 @@ using System.Linq.Expressions;
 
 namespace FundMarket.Database.Repository;
 
-public abstract class Repository<T>(StockMarketContext stockMarketContext) : IRepository<T> where T : class
+public class Repository<T>(StockMarketContext stockMarketContext) : IRepository<T> where T : class
 {
     public IEnumerable<T> Get() => 
         stockMarketContext.Set<T>().ToList();
