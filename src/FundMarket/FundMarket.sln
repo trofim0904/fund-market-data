@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FundMarketConsoleApp", "FundMarketConsoleApp\FundMarketConsoleApp.csproj", "{C281FC56-D11A-4E0C-8862-93A28B7813C8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FundMarket.ConsoleApp", "FundMarket.ConsoleApp\FundMarket.ConsoleApp.csproj", "{C281FC56-D11A-4E0C-8862-93A28B7813C8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FundMarket.Reader", "FundMarket.Reader\FundMarket.Reader.csproj", "{E24BD75B-D977-4C74-82C7-2A9C0CF993A7}"
 EndProject
@@ -8,7 +8,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FundMarket.Database", "Fund
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FundMarket.Mapper", "FundMarket.Mapper\FundMarket.Mapper.csproj", "{F86A9176-4F5C-40CB-AAA0-2F963EC152F8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FundMarket.Helper", "FundMarket.Helper\FundMarket.Helper.csproj", "{32428807-824C-40D1-AAD1-A37430D6738F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FundMarket.General", "FundMarket.General\FundMarket.General.csproj", "{32428807-824C-40D1-AAD1-A37430D6738F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

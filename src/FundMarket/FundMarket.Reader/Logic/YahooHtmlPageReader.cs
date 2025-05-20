@@ -31,7 +31,7 @@ public class YahooHtmlPageReader : IAssetReader
         return tickers.Select(GetAsset);
     }
 
-    public Task<IEnumerable<Asset>> GetAssetsAssync(IEnumerable<string> tickers)
+    public Task<IEnumerable<Asset>> GetAssetsAsync(IEnumerable<string> tickers)
     {
         return Task.Run(() => GetAssets(tickers));
     }

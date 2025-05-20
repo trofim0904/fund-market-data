@@ -1,12 +1,12 @@
-﻿using FundMarket;
-using FundMarket.Database;
+﻿using FundMarket.Database;
+using FundMarket.Helper;
 using Microsoft.EntityFrameworkCore;
 
 DbContextOptionsBuilder optionsBuilder = new();
 optionsBuilder.UseSqlite("Data Source=StockMarket.db");
 await using StockMarketContext context = new StockMarketContext(optionsBuilder.Options);
 UnitOfWork unitOfWork = new UnitOfWork(context);
-StockConsoleService stockService = new StockConsoleService(unitOfWork);
+StockService stockService = new StockService(unitOfWork, Console.Out);
 bool isRunning = true;
 
 Console.WriteLine("Welcome to Fund Market Console App");
@@ -96,7 +96,7 @@ void Pause()
     Console.ReadKey();
 }
 
-async Task BuyAsset(StockConsoleService stockConsoleService)
+async Task BuyAsset(StockService stockConsoleService)
 {
     Console.Write("Input ticker: ");
     string? ticker = Console.ReadLine();
@@ -109,7 +109,7 @@ async Task BuyAsset(StockConsoleService stockConsoleService)
     await stockConsoleService.BuyAsset(ticker, qty, price, date);
 }
 
-async Task SellAsset(StockConsoleService stockConsoleService)
+async Task SellAsset(StockService stockConsoleService)
 {
     Console.Write("Input ticker: ");
     string? ticker = Console.ReadLine();
