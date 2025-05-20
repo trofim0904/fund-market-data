@@ -22,5 +22,5 @@ public interface IAssetReader
     /// <summary>
     /// Retrieves the asset prices for a collection of specified tickers.
     /// </summary>
-    Task<IEnumerable<Asset>> GetAssetsAssync(IEnumerable<string> tickers);
+    Task<IEnumerable<Asset>> GetAssetsAsync(IEnumerable<string> tickers);
 }

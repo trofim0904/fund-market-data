@@ -1,14 +1,13 @@
 using System.Globalization;
 using FundMarket.Database;
-using FundMarket.Helper;
 using FundMarket.Helper.Models;
 using FundMarket.Mapper;
 using FundMarket.Reader.Logic;
 using FundMarket.Reader.Model;
 
-namespace FundMarket;
+namespace FundMarket.Helper;
 
-public class StockConsoleService(UnitOfWork unitOfWork) : GeneralStockService
+public class StockService(UnitOfWork unitOfWork, TextWriter writer) : GeneralStockService
 {
     /// <summary>
     /// Adds one or multiple ticker symbols to the system. Each ticker is validated using an external data source.
@@ -39,7 +38,7 @@ public class StockConsoleService(UnitOfWork unitOfWork) : GeneralStockService
     }
 
     /// <summary>
-    /// Displays all saved ticker symbols from the database in the console.
+    /// Displays all saved ticker symbols from the database.
     /// </summary>
     public void SeeTickers()
     {
@@ -47,7 +46,7 @@ public class StockConsoleService(UnitOfWork unitOfWork) : GeneralStockService
                      .OrderBy(t => t.IsIgnored)
                      .ThenBy(t => t.Name))
         {
-            Console.WriteLine(ticker);
+            writer.WriteLine(ticker);
         }
     }
 
@@ -63,11 +62,11 @@ public class StockConsoleService(UnitOfWork unitOfWork) : GeneralStockService
             ticker.IsIgnored = !(ticker.IsIgnored ?? false);
             unitOfWork.TickerRepository.Update(ticker);
             await unitOfWork.SaveChangesAsync();
-            Console.WriteLine("Ticker flag updated.");
+            await writer.WriteLineAsync("Ticker flag updated.");
         }
         else
         {
-            Console.WriteLine("Ticker not found.");
+            await writer.WriteLineAsync("Ticker not found.");
         }
     }
 
@@ -82,24 +81,24 @@ public class StockConsoleService(UnitOfWork unitOfWork) : GeneralStockService
         {
             unitOfWork.TickerRepository.Delete(ticker);
             await unitOfWork.SaveChangesAsync();
-            Console.WriteLine("Ticker deleted.");
+            await writer.WriteLineAsync("Ticker deleted.");
         }
         else
         {
-            Console.WriteLine("Ticker not found.");
+            await writer.WriteLineAsync("Ticker not found.");
         }
     }
 
     /// <summary>
     /// Retrieves today's stock data for all tickers from the database 
-    /// and outputs each asset to the console.
+    /// and outputs each asset.
     /// </summary>
     public async Task SeeCurrentData()
     {
         var assets = await LoadGeneralStockData(unitOfWork);
         foreach (var asset in assets.OrderByDescending(a => a.MarketCap))
         {
-            Console.WriteLine(asset);
+            writer.WriteLine(asset);
         }
     }
 
@@ -119,11 +118,11 @@ public class StockConsoleService(UnitOfWork unitOfWork) : GeneralStockService
             }
             catch (Exception)
             {
-                Console.WriteLine("No price for ticker");
+                await writer.WriteLineAsync("No price for ticker");
             }
             if (asset != null)
             {
-                Console.WriteLine(asset);
+                writer.WriteLine(asset);
             }
         }
     }
@@ -150,17 +149,17 @@ public class StockConsoleService(UnitOfWork unitOfWork) : GeneralStockService
                 }
                 unitOfWork.PurchaseRepository.Insert(DBModelMapper.MapPurchase(ticker,qtyDecimal, priceDecimal, dateTime));
                 await unitOfWork.SaveChangesAsync();
-                Console.WriteLine($"Added {qtyDecimal} of {ticker}");
+                await writer.WriteLineAsync($"Added {qtyDecimal} of {ticker}");
             }
             catch (Exception e)
             {
-                Console.WriteLine("Error: " + e.Message);
+                await writer.WriteLineAsync("Error: " + e.Message);
             }
 
         }
         else
         {
-            Console.WriteLine("Invalid ticker");
+            await writer.WriteLineAsync("Invalid ticker");
         }
     }
     
@@ -179,17 +178,17 @@ public class StockConsoleService(UnitOfWork unitOfWork) : GeneralStockService
                 }
                 unitOfWork.SaleRepository.Insert(DBModelMapper.MapSale(ticker,qtyDecimal, priceDecimal, dateTime));
                 await unitOfWork.SaveChangesAsync();
-                Console.WriteLine($"Sold {qtyDecimal} of {ticker}");
+                await writer.WriteLineAsync($"Sold {qtyDecimal} of {ticker}");
             }
             catch (Exception e)
             {
-                Console.WriteLine("Error: " + e.Message);
+                await writer.WriteLineAsync("Error: " + e.Message);
             }
 
         }
         else
         {
-            Console.WriteLine("Invalid ticker");
+            await writer.WriteLineAsync("Invalid ticker");
         }
     }
 
@@ -208,9 +207,9 @@ public class StockConsoleService(UnitOfWork unitOfWork) : GeneralStockService
             foreach (var summary in assetSummaries.OrderByDescending(s => s.Difference))
             {
                 pnl += summary.Difference ?? decimal.Zero;
-                Console.WriteLine(summary);
+                writer.WriteLine(summary);
             }
-            Console.WriteLine($"Total PnL: ${pnl:F2}");
+            await writer.WriteLineAsync($"Total PnL: ${pnl:F2}");
         }
     }
 
@@ -233,7 +232,7 @@ public class StockConsoleService(UnitOfWork unitOfWork) : GeneralStockService
         }
         catch (Exception e)
         {
-            Console.WriteLine("Error: not able to get assets. " + e.Message);
+            await writer.WriteLineAsync("Error: not able to get assets. " + e.Message);
         }
     }
 
@@ -255,18 +254,18 @@ public class StockConsoleService(UnitOfWork unitOfWork) : GeneralStockService
             var asset = await reader.GetAssetAsync(ticker);
             if (unitOfWork.TickerRepository.Get(t => t.Name == asset.Ticker).Any())
             {
-                Console.WriteLine($"Ticker '{ticker}' already exists.");
+                await writer.WriteLineAsync($"Ticker '{ticker}' already exists.");
             }
             else
             {
                 unitOfWork.TickerRepository.Insert(DBModelMapper.MapTickerRecord(asset));
                 await unitOfWork.SaveChangesAsync();
-                Console.WriteLine($"Ticker '{ticker}' added.");
+                await writer.WriteLineAsync($"Ticker '{ticker}' added.");
             }
         }
         catch (Exception)
         {
-            Console.WriteLine($"No price found for ticker '{ticker}'.");
+            await writer.WriteLineAsync($"No price found for ticker '{ticker}'.");
         }
     }
 
@@ -286,6 +285,6 @@ public class StockConsoleService(UnitOfWork unitOfWork) : GeneralStockService
     /// <param name="qty">The recommended qty to invest.</param>
     private void BuyTicketRecommendation(string? ticker, decimal qty)
     {
-        Console.WriteLine($"Recommendation. Buy {qty} shares of ticker {ticker}.");
+        writer.WriteLine($"Recommendation. Buy {qty} shares of ticker {ticker}.");
     }
 }
