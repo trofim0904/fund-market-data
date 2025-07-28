@@ -1,8 +1,10 @@
+using System.Globalization;
 using FundMarket.Reader.Model;
 using HtmlAgilityPack;
 
 namespace FundMarket.Reader.Logic;
 
+[Obsolete("Stopped working, checked on 30/06/2025")]
 public class YahooHtmlPageReader : IAssetReader
 {
     private const string YahooUrl = "https://finance.yahoo.com/";
@@ -10,7 +12,7 @@ public class YahooHtmlPageReader : IAssetReader
     public Asset GetAsset(string ticker)
     {
         var defUrl = $"{YahooUrl}quote/{ticker}";
-        var analysisUrl = $"{defUrl}/analysis";
+        var analysisUrl = $"{defUrl}/analysis/";
         var web = new HtmlWeb();
         var analysisDoc = web.Load(analysisUrl);
         var futurePrice = GetFirstElementInnerText(analysisDoc, "//div[contains(@class, 'average')]");
@@ -18,6 +20,18 @@ public class YahooHtmlPageReader : IAssetReader
         var defDoc = web.Load(defUrl);
         var marketCap =
             GetFirstElementInnerText(defDoc, "//div[@class='container yf-i6syij']//p[@class='value yf-i6syij']");
+        if (string.IsNullOrWhiteSpace(currentPrice))
+        {
+            currentPrice = decimal.Zero.ToString(CultureInfo.InvariantCulture);
+        }
+        if (string.IsNullOrWhiteSpace(futurePrice))
+        {
+            futurePrice = decimal.Zero.ToString(CultureInfo.InvariantCulture);
+        }
+        if (string.IsNullOrWhiteSpace(marketCap))
+        {
+            marketCap = decimal.Zero.ToString(CultureInfo.InvariantCulture);
+        }
         return new Asset(ticker, decimal.Parse(currentPrice), decimal.Parse(futurePrice), ConvertToDecimal(marketCap));
     }
 

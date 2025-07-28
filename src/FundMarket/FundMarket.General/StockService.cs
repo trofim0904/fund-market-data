@@ -16,7 +16,7 @@ public class StockService(UnitOfWork unitOfWork, TextWriter writer) : GeneralSto
     /// <param name="input">
     /// A string containing one or more ticker symbols separated by semicolons (e.g., "AAPL;TSLA;MSFT").
     /// </param>
-    public async Task AddTickersAsync(string? input)
+    public async Task AddTickersAsync(string? input, IAssetReader reader)
     {
         const char delimiter = ';';
         if (input != null)
@@ -32,7 +32,7 @@ public class StockService(UnitOfWork unitOfWork, TextWriter writer) : GeneralSto
             }
             foreach (var raw in tickers)
             {
-                await AddTicker(raw);
+                await AddTicker(raw, reader);
             }
         }
     }
@@ -93,9 +93,9 @@ public class StockService(UnitOfWork unitOfWork, TextWriter writer) : GeneralSto
     /// Retrieves today's stock data for all tickers from the database 
     /// and outputs each asset.
     /// </summary>
-    public async Task SeeCurrentData()
+    public async Task SeeCurrentData(IAssetReader reader)
     {
-        var assets = await LoadGeneralStockData(unitOfWork);
+        var assets = await LoadGeneralStockData(unitOfWork, reader);
         foreach (var asset in assets.OrderByDescending(a => a.MarketCap))
         {
             writer.WriteLine(asset);
@@ -106,11 +106,11 @@ public class StockService(UnitOfWork unitOfWork, TextWriter writer) : GeneralSto
     /// Fetches and displays current stock data for the specified ticker symbol.
     /// </summary>
     /// <param name="ticker">The stock ticker symbol (e.g., "AAPL", "TSLA").</param>
-    public async Task SeeTickerData(string? ticker)
+    /// <param name="reader">The stock data reader.</param>
+    public async Task SeeTickerData(string? ticker, IAssetReader reader)
     {
         if (ticker != null)
         {
-            IAssetReader reader = new YahooHtmlPageReader();
             Asset? asset = null;
             try
             {
@@ -196,17 +196,20 @@ public class StockService(UnitOfWork unitOfWork, TextWriter writer) : GeneralSto
     /// Displays a summary of all purchased assets, including quantity, average price, current price,
     /// and profit or loss (PnL) for each asset. Also prints the total PnL across all assets.
     /// </summary>
-    public async Task SeeBoughtAssets()
+    public async Task SeeBoughtAssets(IAssetReader reader)
     {
         var purchases = unitOfWork.PurchaseRepository.Get().ToList();
         var sales = unitOfWork.SaleRepository.Get().ToList();
         if (purchases.Count != 0)
         {
-            var assetSummaries = await GetAssetSummary(unitOfWork, purchases, sales);
+            var assetSummaries = await GetAssetSummary(unitOfWork, purchases, sales, reader);
+            var items = assetSummaries.ToList();
             var pnl = decimal.Zero;
-            foreach (var summary in assetSummaries.OrderByDescending(s => s.Difference))
+            var totalValue = items.Sum(s => s.CurrentValue);
+            foreach (var summary in items.OrderByDescending(s => s.Difference))
             {
                 pnl += summary.Difference ?? decimal.Zero;
+                summary.Percent = summary.CurrentValue * 100m / totalValue;
                 writer.WriteLine(summary);
             }
             await writer.WriteLineAsync($"Total PnL: ${pnl:F2}");
@@ -219,12 +222,12 @@ public class StockService(UnitOfWork unitOfWork, TextWriter writer) : GeneralSto
     /// </summary>
     /// <param name="input">The investment amount as a string (e.g., "1000").</param>
     /// <returns>A task representing the asynchronous recommendation operation.</returns>
-    public async Task RecommendAssetsAsync(string? input)
+    public async Task RecommendAssetsAsync(string? input, IAssetReader reader)
     {
         try 
         {
             decimal.TryParse(input, out decimal amt);
-            var recommendations = await GetAssetRecommendations(unitOfWork, amt);
+            var recommendations = await GetAssetRecommendations(unitOfWork, amt, reader);
             foreach (var recommendation in recommendations)
             {
                 BuyTicketRecommendation(recommendation);
@@ -241,14 +244,13 @@ public class StockService(UnitOfWork unitOfWork, TextWriter writer) : GeneralSto
     /// Retrieves the asset data from Yahoo and saves it if the ticker does not already exist.
     /// </summary>
     /// <param name="raw">The raw ticker input string, which will be trimmed and normalized.</param>
-    private async Task AddTicker(string raw)
+    private async Task AddTicker(string raw, IAssetReader reader)
     {
         var ticker = raw.Trim().ToUpper();
         if (string.IsNullOrWhiteSpace(ticker))
         {
             return;
         }
-        YahooHtmlPageReader reader = new YahooHtmlPageReader();
         try
         {
             var asset = await reader.GetAssetAsync(ticker);

@@ -16,13 +16,13 @@ public abstract class GeneralStockService
     /// Uses an <see cref="IAssetReader"/> to fetch data asynchronously.
     /// </summary>
     /// <param name="unitOfWork">The unit of work used to access the ticker repository.</param>
+    /// <param name="reader">The stock data reader.</param>
     /// <returns>
     /// A task representing the asynchronous operation. The task result contains an array
     /// of <see cref="Asset"/> objects with the latest stock data.
     /// </returns>
-    protected async Task<Asset[]> LoadGeneralStockData(UnitOfWork unitOfWork)
+    protected async Task<Asset[]> LoadGeneralStockData(UnitOfWork unitOfWork, IAssetReader reader)
     {
-        IAssetReader reader = new YahooHtmlPageReader();
         List<Task<Asset>> tasks = [];
         foreach (var ticker in unitOfWork.TickerRepository.Get())
         {
@@ -42,13 +42,14 @@ public abstract class GeneralStockService
     /// <param name="unitOfWork">The unit of work used to load current stock data.</param>
     /// <param name="purchases">A list of asset purchases grouped by ticker.</param>
     /// <param name="sales"></param>
+    /// <param name="reader">The stock data reader.</param>
     /// <returns>
     /// A task that returns a collection of <see cref="AssetSummary"/> representing the current portfolio snapshot.
     /// </returns>
     protected async Task<IEnumerable<AssetSummary>> GetAssetSummary(UnitOfWork unitOfWork, List<AssetPurchase> purchases,
-        List<AssetSale> sales)
+        List<AssetSale> sales, IAssetReader reader)
     {
-        var stockData = await LoadGeneralStockData(unitOfWork);
+        var stockData = await LoadGeneralStockData(unitOfWork, reader);
         return GetAssetSummary(purchases, sales, stockData.ToList());
     }
 
@@ -74,7 +75,8 @@ public abstract class GeneralStockService
                 AvgPrice = GetAvgPrice(g.ToList()),
                 PurchaseTotal = g.Sum(a => a.Qty * a.Price) - sales.Where(s => s.Ticker == g.Key).Sum(s => s.Qty * s.Price),
                 CurrentPrice = stockData.FirstOrDefault(d => d.Ticker == g.Key)?.CurrentPrice ?? decimal.Zero,
-            });
+            })
+            .Where(s => s.Qty > decimal.Zero);
         return assetSummaries;
     }
 
@@ -103,7 +105,8 @@ public abstract class GeneralStockService
     /// <param name="amt">The amount of money available to invest.</param>
     /// <returns>A collection of <see cref="AssetRecommendation"/> objects based on portfolio gaps and weight balancing.</returns>
     /// <exception cref="Exception">Thrown if no assets can be recommended with the provided amount.</exception>
-    protected async Task<IEnumerable<AssetRecommendation>> GetAssetRecommendations(UnitOfWork unitOfWork, decimal amt)
+    protected async Task<IEnumerable<AssetRecommendation>> GetAssetRecommendations(UnitOfWork unitOfWork, decimal amt,
+        IAssetReader reader)
     {
         const int tiers = 5;
         var result = new List<AssetRecommendation>();
@@ -112,7 +115,7 @@ public abstract class GeneralStockService
         var tickers = unitOfWork.TickerRepository.Get(t => t.IsIgnored != true).ToList();
         var purchases = unitOfWork.PurchaseRepository.Get().ToList();
         var sales = unitOfWork.SaleRepository.Get().ToList();
-        var stockData = await LoadGeneralStockData(unitOfWork);
+        var stockData = await LoadGeneralStockData(unitOfWork, reader);
         // Determine tickers not yet bought
         var notBoughtTickers = tickers
             .Select(t => t.Name)
@@ -147,12 +150,12 @@ public abstract class GeneralStockService
         bool recommendationMade;
         do
         {
-            var totalValue = summary.Sum(s => s.PurchaseTotal);
+            var totalValue = summary.Sum(s => s.CurrentValue);
             // Assign percent weight and tier to each summary item
             foreach (var item in summary)
             {
                 var cap = stockData.First(s => s.Ticker == item.Ticker).MarketCap;
-                item.Percent = item.PurchaseTotal * 100m / totalValue;
+                item.Percent = item.CurrentValue * 100m / totalValue;
                 item.Tier = GetTier(tiers, maxMarketCap, minMarketCap, cap);
             }
             // Filter out assets where current percent >= expected percent for the tier
