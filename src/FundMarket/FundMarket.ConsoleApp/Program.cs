@@ -1,5 +1,6 @@
 ﻿using FundMarket.Database;
 using FundMarket.Helper;
+using FundMarket.Reader.Logic;
 using Microsoft.EntityFrameworkCore;
 
 DbContextOptionsBuilder optionsBuilder = new();
@@ -7,6 +8,8 @@ optionsBuilder.UseSqlite("Data Source=StockMarket.db");
 await using StockMarketContext context = new StockMarketContext(optionsBuilder.Options);
 UnitOfWork unitOfWork = new UnitOfWork(context);
 StockService stockService = new StockService(unitOfWork, Console.Out);
+string? apiKey = Environment.GetEnvironmentVariable("FinnhubStockApiKey");
+IAssetReader reader = new FinnhubStockReader(apiKey);
 bool isRunning = true;
 
 Console.WriteLine("Welcome to Fund Market Console App");
@@ -21,7 +24,7 @@ while (isRunning)
             break;
         case "1":
             Console.Write("Input ticker/tickers: ");
-            await stockService.AddTickersAsync(Console.ReadLine());
+            await stockService.AddTickersAsync(Console.ReadLine(), reader);
             Pause();
             break;
         case "2":
@@ -43,12 +46,12 @@ while (isRunning)
             }
             break;
         case "4":
-            await stockService.SeeCurrentData();
+            await stockService.SeeCurrentData(reader);
             Pause();
             break;
         case "5":
             Console.Write("Input ticker: ");
-            await stockService.SeeTickerData(Console.ReadLine());
+            await stockService.SeeTickerData(Console.ReadLine(), reader);
             Pause();
             break;
         case "6":
@@ -60,12 +63,12 @@ while (isRunning)
             Pause();
             break;
         case "8":
-            await stockService.SeeBoughtAssets();
+            await stockService.SeeBoughtAssets(reader);
             Pause();
             break;
         case "9":
             Console.WriteLine("Input amount to invest");
-            await stockService.RecommendAssetsAsync(Console.ReadLine());
+            await stockService.RecommendAssetsAsync(Console.ReadLine(), reader);
             Pause();
             break;
         default:

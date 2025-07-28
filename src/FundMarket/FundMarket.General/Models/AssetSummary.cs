@@ -29,6 +29,7 @@ public class AssetSummary
             $"Purchase Total: {PurchaseTotal,10:F2} | " +
             $"Current Price: {CurrentPrice,7:F2} | " +
             $"Current Value: {CurrentValue,10:F2} | " +
-            $"Difference: {Difference,7:F2}";
+            $"Difference: {Difference,7:F2} | " +
+            $"Percent: {Percent,7:F2}";
     }
 }
