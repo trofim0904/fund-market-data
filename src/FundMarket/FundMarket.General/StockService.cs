@@ -205,14 +205,31 @@ public class StockService(UnitOfWork unitOfWork, TextWriter writer) : GeneralSto
             var assetSummaries = await GetAssetSummary(unitOfWork, purchases, sales, reader);
             var items = assetSummaries.ToList();
             var pnl = decimal.Zero;
+            var total = decimal.Zero;
+            AssetSummary? best = null;
+            AssetSummary? worst = null;
             var totalValue = items.Sum(s => s.CurrentValue);
             foreach (var summary in items.OrderByDescending(s => s.Difference))
             {
                 pnl += summary.Difference ?? decimal.Zero;
+                total += summary.CurrentValue ?? decimal.Zero;
+                best ??= summary;
+                worst ??= summary;
+                if (summary.Difference > best.Difference)
+                {
+                    best = summary;
+                }
+                if (summary.Difference < worst.Difference)
+                {
+                    worst = summary;
+                }
                 summary.Percent = summary.CurrentValue * 100m / totalValue;
                 writer.WriteLine(summary);
             }
+            await writer.WriteLineAsync($"Total Value: ${total:F2}");
             await writer.WriteLineAsync($"Total PnL: ${pnl:F2}");
+            await writer.WriteLineAsync($"Best Asset: {best?.Ticker}");
+            await writer.WriteLineAsync($"Worst Asset: {worst?.Ticker}");
         }
     }
 
