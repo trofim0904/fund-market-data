@@ -8,7 +8,7 @@ public interface IAssetReader
     /// Retrieves the asset price for the specified ticker.
     /// </summary>
     Asset GetAsset(string ticker);
-    
+
     /// <summary>
     /// Retrieves the asset price for the specified ticker.
     /// </summary>

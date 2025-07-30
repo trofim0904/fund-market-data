@@ -107,7 +107,7 @@ async Task BuyAsset(StockService stockConsoleService)
     string? qty = Console.ReadLine();
     Console.Write("Input price: ");
     string? price = Console.ReadLine();
-    Console.Write("Input date (yyyy-MM-dd): ");
+    Console.Write("Input date (format: yyyy-MM-dd, leave empty to set today`s date): ");
     string? date = Console.ReadLine();
     await stockConsoleService.BuyAsset(ticker, qty, price, date);
 }
@@ -120,7 +120,7 @@ async Task SellAsset(StockService stockConsoleService)
     string? qty = Console.ReadLine();
     Console.Write("Input price: ");
     string? price = Console.ReadLine();
-    Console.Write("Input date (yyyy-MM-dd): ");
+    Console.Write("Input date (format: yyyy-MM-dd, leave empty to set today`s date): ");
     string? date = Console.ReadLine();
     await stockConsoleService.SellAsset(ticker, qty, price, date);
 }

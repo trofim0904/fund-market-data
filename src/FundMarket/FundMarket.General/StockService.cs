@@ -90,15 +90,22 @@ public class StockService(UnitOfWork unitOfWork, TextWriter writer) : GeneralSto
     }
 
     /// <summary>
-    /// Retrieves today's stock data for all tickers from the database 
+    /// Retrieves today's stock data for all tickers from the database that are not ignored
     /// and outputs each asset.
     /// </summary>
     public async Task SeeCurrentData(IAssetReader reader)
     {
-        var assets = await LoadGeneralStockData(unitOfWork, reader);
-        foreach (var asset in assets.OrderByDescending(a => a.MarketCap))
+        try 
         {
-            writer.WriteLine(asset);
+            var assets = await LoadGeneralStockData(unitOfWork, reader, ticker => ticker.IsIgnored != true);
+            foreach (var asset in assets.OrderByDescending(a => a.MarketCap))
+            {
+                writer.WriteLine(asset);
+            }
+        }
+        catch (Exception e)
+        {
+            await writer.WriteLineAsync(e.Message);
         }
     }
 
@@ -145,7 +152,7 @@ public class StockService(UnitOfWork unitOfWork, TextWriter writer) : GeneralSto
                 decimal.TryParse(price, NumberStyles.Any, CultureInfo.InvariantCulture, out var priceDecimal);
                 if (!DateTime.TryParse(date, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dateTime))
                 {
-                    throw new ArgumentException("Invalid date");
+                    dateTime = DateTime.Today;
                 }
                 unitOfWork.PurchaseRepository.Insert(DBModelMapper.MapPurchase(ticker,qtyDecimal, priceDecimal, dateTime));
                 await unitOfWork.SaveChangesAsync();
@@ -174,7 +181,7 @@ public class StockService(UnitOfWork unitOfWork, TextWriter writer) : GeneralSto
                 decimal.TryParse(price, NumberStyles.Any, CultureInfo.InvariantCulture, out var priceDecimal);
                 if (!DateTime.TryParse(date, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dateTime))
                 {
-                    throw new ArgumentException("Invalid date");
+                    dateTime = DateTime.Today;
                 }
                 unitOfWork.SaleRepository.Insert(DBModelMapper.MapSale(ticker,qtyDecimal, priceDecimal, dateTime));
                 await unitOfWork.SaveChangesAsync();
@@ -198,38 +205,45 @@ public class StockService(UnitOfWork unitOfWork, TextWriter writer) : GeneralSto
     /// </summary>
     public async Task SeeBoughtAssets(IAssetReader reader)
     {
-        var purchases = unitOfWork.PurchaseRepository.Get().ToList();
-        var sales = unitOfWork.SaleRepository.Get().ToList();
-        if (purchases.Count != 0)
-        {
-            var assetSummaries = await GetAssetSummary(unitOfWork, purchases, sales, reader);
-            var items = assetSummaries.ToList();
-            var pnl = decimal.Zero;
-            var total = decimal.Zero;
-            AssetSummary? best = null;
-            AssetSummary? worst = null;
-            var totalValue = items.Sum(s => s.CurrentValue);
-            foreach (var summary in items.OrderByDescending(s => s.Difference))
+        try 
+        { 
+            var purchases = unitOfWork.PurchaseRepository.Get().ToList();
+            var sales = unitOfWork.SaleRepository.Get().ToList();
+            if (purchases.Count != 0)
             {
-                pnl += summary.Difference ?? decimal.Zero;
-                total += summary.CurrentValue ?? decimal.Zero;
-                best ??= summary;
-                worst ??= summary;
-                if (summary.Difference > best.Difference)
+                var assetSummaries = await GetAssetSummary(unitOfWork, purchases, sales, reader);
+                var items = assetSummaries.ToList();
+                var pnl = decimal.Zero;
+                var total = decimal.Zero;
+                AssetSummary? best = null;
+                AssetSummary? worst = null;
+                var totalValue = items.Sum(s => s.CurrentValue);
+                foreach (var summary in items.OrderByDescending(s => s.Difference))
                 {
-                    best = summary;
+                    pnl += summary.Difference ?? decimal.Zero;
+                    total += summary.CurrentValue ?? decimal.Zero;
+                    best ??= summary;
+                    worst ??= summary;
+                    if (summary.Difference > best.Difference)
+                    {
+                        best = summary;
+                    }
+                    if (summary.Difference < worst.Difference)
+                    {
+                        worst = summary;
+                    }
+                    summary.Percent = summary.CurrentValue * 100m / totalValue;
+                    writer.WriteLine(summary);
                 }
-                if (summary.Difference < worst.Difference)
-                {
-                    worst = summary;
-                }
-                summary.Percent = summary.CurrentValue * 100m / totalValue;
-                writer.WriteLine(summary);
+                await writer.WriteLineAsync($"Total Value: ${total:F2}");
+                await writer.WriteLineAsync($"Total PnL: ${pnl:F2}");
+                await writer.WriteLineAsync($"Best Asset: {best?.Ticker}");
+                await writer.WriteLineAsync($"Worst Asset: {worst?.Ticker}");
             }
-            await writer.WriteLineAsync($"Total Value: ${total:F2}");
-            await writer.WriteLineAsync($"Total PnL: ${pnl:F2}");
-            await writer.WriteLineAsync($"Best Asset: {best?.Ticker}");
-            await writer.WriteLineAsync($"Worst Asset: {worst?.Ticker}");
+        }
+        catch (Exception e)
+        {
+            await writer.WriteLineAsync(e.Message);
         }
     }
 
@@ -245,7 +259,7 @@ public class StockService(UnitOfWork unitOfWork, TextWriter writer) : GeneralSto
         {
             decimal.TryParse(input, out decimal amt);
             var recommendations = await GetAssetRecommendations(unitOfWork, amt, reader);
-            foreach (var recommendation in recommendations)
+            foreach (var recommendation in recommendations.OrderByDescending(r => r.NewAsset))
             {
                 BuyTicketRecommendation(recommendation);
             }
@@ -294,7 +308,7 @@ public class StockService(UnitOfWork unitOfWork, TextWriter writer) : GeneralSto
     /// <param name="recommendation">The recommended object of type <see cref="AssetRecommendation"/></param>
     private void BuyTicketRecommendation(AssetRecommendation recommendation)
     {
-        BuyTicketRecommendation(recommendation.Ticker, recommendation.Qty);
+        BuyTicketRecommendation(recommendation.Ticker, recommendation.Qty, recommendation.Reason);
     }
 
     /// <summary>
@@ -302,8 +316,9 @@ public class StockService(UnitOfWork unitOfWork, TextWriter writer) : GeneralSto
     /// </summary>
     /// <param name="ticker">The stock ticker symbol (e.g., "AAPL", "TSLA").</param>
     /// <param name="qty">The recommended qty to invest.</param>
-    private void BuyTicketRecommendation(string? ticker, decimal qty)
+    /// <param name="recommendationReason"></param>
+    private void BuyTicketRecommendation(string? ticker, decimal qty, string recommendationReason)
     {
-        writer.WriteLine($"Recommendation. Buy {qty} shares of ticker {ticker}.");
+        writer.WriteLine($"Recommendation. Buy {qty} shares of ticker {ticker}. {recommendationReason}");
     }
 }

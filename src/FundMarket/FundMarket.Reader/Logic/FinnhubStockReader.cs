@@ -5,6 +5,10 @@ namespace FundMarket.Reader.Logic;
 
 public class FinnhubStockReader : IAssetReader
 {
+    private const int ApiRequestPerMinute = 50;
+
+    private int _requestCount = 0;
+    private static readonly Lock Lock = new();
     private static readonly HttpClient HttpClient = new();
     private readonly string _apiKey;
 
@@ -18,6 +22,17 @@ public class FinnhubStockReader : IAssetReader
 
     public async Task<Asset> GetAssetAsync(string ticker)
     {
+        lock (Lock)
+        {
+            if (_requestCount >= ApiRequestPerMinute)
+            {
+                // wait due to Response status code does not indicate success: 429 (Too Many Requests) error
+                Thread.Sleep(TimeSpan.FromMinutes(1));
+                _requestCount = 0;
+            }
+            // we have two calls in the method
+            _requestCount += 2;
+        }
         const string priceSymbol = "c";
         const string marketCapSymbol = "marketCapitalization";
         decimal price = decimal.Zero;
@@ -34,7 +49,11 @@ public class FinnhubStockReader : IAssetReader
         using var marketJson = JsonDocument.Parse(marketResponse);
         if (marketJson.RootElement.TryGetProperty(marketCapSymbol, out var capElement))
         {
-            marketCap = capElement.GetDecimal();
+            marketCap = capElement.GetDecimal() * 1_000_000;
+        }
+        else if (Constants.MarketCap.ETF.TryGetValue(ticker, out var cap))
+        {
+            marketCap = cap;
         }
         return new Asset(ticker, price, price, marketCap);
     }

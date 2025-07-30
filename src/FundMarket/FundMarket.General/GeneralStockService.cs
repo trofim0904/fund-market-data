@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using FundMarket.Database;
 using FundMarket.Database.Models;
 using FundMarket.Helper.Models;
@@ -25,6 +26,32 @@ public abstract class GeneralStockService
     {
         List<Task<Asset>> tasks = [];
         foreach (var ticker in unitOfWork.TickerRepository.Get())
+        {
+            if (!string.IsNullOrWhiteSpace(ticker.Name))
+            {
+                tasks.Add(reader.GetAssetAsync(ticker.Name));
+            }
+        }
+        var assets = await Task.WhenAll(tasks);
+        return assets;
+    }
+
+    /// <summary>
+    /// Loads general stock data by retrieving assets based on predicate.
+    /// Uses an <see cref="IAssetReader"/> to fetch data asynchronously.
+    /// </summary>
+    /// <param name="unitOfWork">The unit of work used to access the ticker repository.</param>
+    /// <param name="reader">The stock data reader.</param>
+    /// <param name="predicate">Ticker filter.</param>
+    /// <returns>
+    /// A task representing the asynchronous operation. The task result contains an array
+    /// of <see cref="Asset"/> objects with the latest stock data.
+    /// </returns>
+    protected async Task<Asset[]> LoadGeneralStockData(UnitOfWork unitOfWork, IAssetReader reader,
+        Expression<Func<Ticker, bool>> predicate)
+    {
+        List<Task<Asset>> tasks = [];
+        foreach (var ticker in unitOfWork.TickerRepository.Get(predicate))
         {
             if (!string.IsNullOrWhiteSpace(ticker.Name))
             {
@@ -129,7 +156,10 @@ public abstract class GeneralStockService
             var asset = stockData.FirstOrDefault(h => h.Ticker == ticker);
             if (asset != null && amt >= asset.CurrentPrice)
             {
-                result.Add(new AssetRecommendation(asset.Ticker));
+                result.Add(new AssetRecommendation(asset.Ticker, Constants.DefaultReason)
+                {
+                    NewAsset = true
+                });
                 summary.Add(new AssetSummary
                 {
                     Ticker = asset.Ticker,
@@ -150,12 +180,12 @@ public abstract class GeneralStockService
         bool recommendationMade;
         do
         {
-            var totalValue = summary.Sum(s => s.CurrentValue);
+            var totalValue = summary.Sum(s => s.CurrentValue) ?? decimal.Zero;
             // Assign percent weight and tier to each summary item
             foreach (var item in summary)
             {
                 var cap = stockData.First(s => s.Ticker == item.Ticker).MarketCap;
-                item.Percent = item.CurrentValue * 100m / totalValue;
+                item.Percent = Math.Round((item.CurrentValue ?? decimal.Zero) * 100m / totalValue, 2);
                 item.Tier = GetTier(tiers, maxMarketCap, minMarketCap, cap);
             }
             // Filter out assets where current percent >= expected percent for the tier
@@ -168,7 +198,7 @@ public abstract class GeneralStockService
             {
                 if (amt >= asset.CurrentPrice)
                 {
-                    AddRecommendation(result, asset);
+                    AddRecommendation(result, asset, GetExpectedPercent(summary, asset));
                     AddSummaryQty(asset);
                     amt -= asset.CurrentPrice ?? decimal.Zero;
                     recommendationMade = true;
@@ -197,7 +227,8 @@ public abstract class GeneralStockService
     {
         int currentTier = current.Tier!.Value;
         int totalTier = summary.Sum(s => s.Tier!.Value);
-        return currentTier * 100m / totalTier;
+        decimal result = currentTier * 100m / totalTier;
+        return Math.Round(result, 2);
     }
 
     /// <summary>
@@ -216,19 +247,25 @@ public abstract class GeneralStockService
     /// </summary>
     /// <param name="result">The list of current recommendations to update.</param>
     /// <param name="assetSummary">The asset summary to base the recommendation on.</param>
-    private void AddRecommendation(List<AssetRecommendation> result, AssetSummary assetSummary)
+    /// <param name="s"></param>
+    private void AddRecommendation(List<AssetRecommendation> result, AssetSummary assetSummary, decimal? expectedPercent)
     {
         if (assetSummary.Ticker != null)
         {
             var existing = result.FirstOrDefault(r => r.Ticker == assetSummary.Ticker);
             if (existing != null)
             {
+                var newAsset = existing.NewAsset;
+                var reason = newAsset 
+                    ? $"{existing.Reason} Expected in portfolio {expectedPercent}%"
+                    : existing.Reason;
                 result.Remove(existing);
-                result.Add(new AssetRecommendation(assetSummary.Ticker, existing.Qty + 1));
+                result.Add(new AssetRecommendation(assetSummary.Ticker, reason, existing.Qty + 1));
             }
             else
             {
-                result.Add(new AssetRecommendation(assetSummary.Ticker));
+                var reason = $"Current percent in portfolio is {assetSummary.Percent}%, expected {expectedPercent}%";
+                result.Add(new AssetRecommendation(assetSummary.Ticker, reason));
             }
         }
     }
