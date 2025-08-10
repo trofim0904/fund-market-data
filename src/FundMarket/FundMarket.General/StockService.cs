@@ -50,6 +50,41 @@ public class StockService(UnitOfWork unitOfWork, TextWriter writer) : GeneralSto
         }
     }
 
+    public async Task UpdateExpectedPercent(string? tickerToUpdate, string? percentToUpdate)
+    {
+        try 
+        { 
+            ArgumentNullException.ThrowIfNull(tickerToUpdate);
+            ArgumentNullException.ThrowIfNull(percentToUpdate);
+            if (decimal.TryParse(percentToUpdate, NumberStyles.Any, CultureInfo.InvariantCulture, out var newPercent))
+            {
+                tickerToUpdate = tickerToUpdate.Trim().ToUpper();
+                var ticker = unitOfWork.TickerRepository
+                    .Get(t => t.Name == tickerToUpdate)
+                    .FirstOrDefault();
+                if (ticker != null)
+                {
+                    ticker.ExpectedPercent = newPercent;
+                    unitOfWork.TickerRepository.Update(ticker);
+                    await unitOfWork.SaveChangesAsync();
+                    await writer.WriteLineAsync("Ticker percent updated.");
+                }
+                else
+                {
+                    await writer.WriteLineAsync("Ticker not found.");
+                }
+            }
+            else
+            {
+                await writer.WriteLineAsync("Wrong percent format.");
+            }
+        }
+        catch (Exception e)
+        {
+            await writer.WriteLineAsync($"Error: {e.Message}");
+        }
+    }
+
     public async Task UpdateIgnoreFlag(string? tickerToUpdate)
     {
         ArgumentNullException.ThrowIfNull(tickerToUpdate);

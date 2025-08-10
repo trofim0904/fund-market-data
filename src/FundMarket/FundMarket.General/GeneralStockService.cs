@@ -142,7 +142,7 @@ public abstract class GeneralStockService
         var tickers = unitOfWork.TickerRepository.Get(t => t.IsIgnored != true).ToList();
         var purchases = unitOfWork.PurchaseRepository.Get().ToList();
         var sales = unitOfWork.SaleRepository.Get().ToList();
-        var stockData = await LoadGeneralStockData(unitOfWork, reader);
+        var stockData = await LoadGeneralStockData(unitOfWork, reader, ticker => ticker.IsIgnored != true);
         // Determine tickers not yet bought
         var notBoughtTickers = tickers
             .Select(t => t.Name)
@@ -186,19 +186,32 @@ public abstract class GeneralStockService
             {
                 var cap = stockData.First(s => s.Ticker == item.Ticker).MarketCap;
                 item.Percent = Math.Round((item.CurrentValue ?? decimal.Zero) * 100m / totalValue, 2);
-                item.Tier = GetTier(tiers, maxMarketCap, minMarketCap, cap);
+                if (tickers.FirstOrDefault(t => t.Name == item.Ticker) is { ExpectedPercent: not null })
+                {
+                    item.Tier = 0;
+                }
+                else
+                {
+                    item.Tier = GetTier(tiers, maxMarketCap, minMarketCap, cap);
+                }
+            }
+            // do in new loop as we need tier of all items 
+            foreach (var assetSummary in summary)
+            {
+                assetSummary.ExpectedPercent = GetExpectedPercent(summary, assetSummary, tickers);
             }
             // Filter out assets where current percent >= expected percent for the tier
             var underweightAssets = summary
-                .Where(s => s.Percent < GetExpectedPercent(summary, s))
-                .OrderBy(s => s.Difference)
+                .Where(s => s.Percent < s.ExpectedPercent)
+                .OrderByDescending(s => s.ExpectedPercent - s.Percent)
+                .ThenBy(s => s.Difference)
                 .ToList();
             recommendationMade = false;
             foreach (var asset in underweightAssets)
             {
                 if (amt >= asset.CurrentPrice)
                 {
-                    AddRecommendation(result, asset, GetExpectedPercent(summary, asset));
+                    AddRecommendation(result, asset, asset.ExpectedPercent);
                     AddSummaryQty(asset);
                     amt -= asset.CurrentPrice ?? decimal.Zero;
                     recommendationMade = true;
@@ -220,15 +233,30 @@ public abstract class GeneralStockService
     /// </summary>
     /// <param name="summary">The list of all asset summaries.</param>
     /// <param name="current">The current asset summary whose tier allocation is being evaluated.</param>
+    /// <param name="tickers">The tickets that might have expected percent.</param>
     /// <returns>
     /// A decimal representing the percentage share this tier is expected to hold in the overall distribution.
     /// </returns>
-    private static decimal? GetExpectedPercent(List<AssetSummary> summary, AssetSummary current)
+    protected static decimal? GetExpectedPercent(List<AssetSummary> summary, AssetSummary current,
+        List<Ticker> tickers)
     {
-        int currentTier = current.Tier!.Value;
-        int totalTier = summary.Sum(s => s.Tier!.Value);
-        decimal result = currentTier * 100m / totalTier;
-        return Math.Round(result, 2);
+        if (tickers.FirstOrDefault(t => t.Name == current.Ticker) is { ExpectedPercent: not null } ticker)
+        {
+            return ticker.ExpectedPercent;
+        }
+        var expectedPercentTotal = tickers
+            .Where(t => t.ExpectedPercent is not null)
+            .Sum(t => t.ExpectedPercent) ?? decimal.Zero;
+        var leftPercentTotal = 100 - expectedPercentTotal;
+        if (leftPercentTotal > 0)
+        {
+            int currentTier = current.Tier!.Value;
+            int totalTier = summary.Sum(s => s.Tier!.Value);
+            decimal result = currentTier * 100m / totalTier;
+            result = result * leftPercentTotal / expectedPercentTotal;
+            return Math.Round(result, 2);
+        }
+        return decimal.Zero;
     }
 
     /// <summary>
