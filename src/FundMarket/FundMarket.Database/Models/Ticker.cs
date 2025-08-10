@@ -11,5 +11,8 @@ public class Ticker
 
     public bool? IsIgnored { get; set; }
 
-    public override string ToString() => $"Ticker: {Name,-5} Ignored: {IsIgnored ?? false}";
+    public decimal? ExpectedPercent { get; set; }
+
+    public override string ToString() => $"Ticker: {Name,-5} Ignored: {IsIgnored ?? false}"
+        + (ExpectedPercent is null ? string.Empty : $"Expected: {ExpectedPercent}%");
 }

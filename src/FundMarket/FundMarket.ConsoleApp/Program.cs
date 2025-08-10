@@ -34,6 +34,12 @@ while (isRunning)
         case "3":
             Console.Write("Input ticker to update: ");
             var tickerToUpdate = Console.ReadLine();
+            Console.Write("Do you want to update expected percent? y/n: ");
+            if (Console.ReadLine() == "y")
+            {
+                Console.Write("Input percent: ");
+                await stockService.UpdateExpectedPercent(tickerToUpdate, Console.ReadLine());
+            }
             Console.Write("Do you want to update ignore flag? y/n: ");
             if (Console.ReadLine() == "y")
             {

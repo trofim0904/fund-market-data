@@ -17,6 +17,8 @@ public class AssetSummary
     public decimal? Difference => CurrentValue - PurchaseTotal;
 
     public decimal? Percent { get; set; }
+    
+    public decimal? ExpectedPercent { get; set; }
 
     public int? Tier { get; set; }
 
