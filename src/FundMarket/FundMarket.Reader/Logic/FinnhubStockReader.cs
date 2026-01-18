@@ -18,8 +18,6 @@ public class FinnhubStockReader : IAssetReader
         _apiKey = apiKey;
     }
 
-    public Asset GetAsset(string ticker) => GetAssetAsync(ticker).Result;
-
     public async Task<Asset> GetAssetAsync(string ticker)
     {
         lock (Lock)
@@ -30,16 +28,10 @@ public class FinnhubStockReader : IAssetReader
                 Thread.Sleep(TimeSpan.FromMinutes(1));
                 _requestCount = 0;
             }
-            // we have two calls in the method
-            _requestCount += 2;
+            _requestCount++;
         }
         var price = await GetPrice(ticker);
-        return new Asset(ticker, price, price);
-    }
-
-    public IEnumerable<Asset> GetAssets(IEnumerable<string> tickers)
-    {
-        return tickers.Select(GetAsset);
+        return new Asset(ticker, price);
     }
 
     public async Task<IEnumerable<Asset>> GetAssetsAsync(IEnumerable<string> tickers)

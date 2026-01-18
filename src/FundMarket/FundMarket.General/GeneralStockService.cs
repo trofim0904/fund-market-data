@@ -68,8 +68,8 @@ public abstract class GeneralStockService
     /// Generates a summarized view of the user's asset portfolio including quantity, average price,
     /// total investment, and current market price for each ticker.
     /// </summary>
-    /// <param name="assets">A list of asset purchases grouped by ticker.</param>
     /// <param name="purchases"></param>
+    /// <param name="sales"></param>
     /// <param name="stockData">A list of stock data statistic.</param>
     /// <returns>
     /// Collection of <see cref="AssetSummaryItem"/> representing the current portfolio snapshot.
@@ -85,7 +85,7 @@ public abstract class GeneralStockService
                 Qty = g.Sum(a => a.Qty) - sales.Where(s => s.Ticker == g.Key).Sum(s => s.Qty),
                 AvgPrice = GetAvgPrice(g.ToList()),
                 PurchaseTotal = g.Sum(a => a.Qty * a.Price) - sales.Where(s => s.Ticker == g.Key).Sum(s => s.Qty * s.Price),
-                CurrentPrice = stockData.FirstOrDefault(d => d.Ticker == g.Key)?.CurrentPrice ?? decimal.Zero,
+                CurrentPrice = stockData.FirstOrDefault(d => d.Ticker == g.Key)?.CurrentPrice ?? decimal.Zero
             })
             .Where(s => s.Qty > decimal.Zero);
         return assetSummaries;
@@ -96,10 +96,10 @@ public abstract class GeneralStockService
     /// </summary>
     /// <param name="list">The list of purchases to calculate the average price from.</param>
     /// <returns>The weighted average price, rounded to 3 decimal places.</returns>
-    private decimal GetAvgPrice(List<AssetPurchase> list)
+    private static decimal GetAvgPrice(List<AssetPurchase> list)
     {
-        decimal totalQty = decimal.Zero;
-        decimal totalCost = decimal.Zero;
+        var totalQty = decimal.Zero;
+        var totalCost = decimal.Zero;
         foreach (var purchase in list)
         {
             totalQty += purchase.Qty;
@@ -156,16 +156,13 @@ public abstract class GeneralStockService
             // Filter out assets where current percent >= expected percent
             var underweightAssets = GetUnderweightAssets(summary);
             recommendationMade = false;
-            foreach (var asset in underweightAssets)
+            foreach (var asset in underweightAssets.Where(asset => amt >= asset.CurrentPrice))
             {
-                if (amt >= asset.CurrentPrice)
-                {
-                    AddRecommendation(result, asset, asset.ExpectedPercent);
-                    AddSummaryQty(asset);
-                    amt -= asset.CurrentPrice ?? decimal.Zero;
-                    recommendationMade = true;
-                    break; // Only one recommendation per loop
-                }
+                AddRecommendation(result, asset, asset.ExpectedPercent);
+                AddSummaryQty(asset);
+                amt -= asset.CurrentPrice ?? decimal.Zero;
+                recommendationMade = true;
+                break; // Only one recommendation per loop
             }
         } while (recommendationMade);
         return result;
@@ -206,7 +203,7 @@ public abstract class GeneralStockService
         var percentToSet = decimal.Zero;
         if (leftPercentTotal > decimal.Zero)
         {
-            decimal result = leftPercentTotal / ticketsWithoutPercentCount;
+            var result = leftPercentTotal / ticketsWithoutPercentCount;
             percentToSet = Math.Round(result, 2);
         }
         foreach (var ticker in tickers.Where(t => t.ExpectedPercent is null or decimal.Zero))
@@ -251,7 +248,7 @@ public abstract class GeneralStockService
             .ToList();
     }
 
-    private async Task<Asset?> TryGetStockData(IAssetReader reader, List<Asset> stockData, string? ticker)
+    private static async Task<Asset?> TryGetStockData(IAssetReader reader, List<Asset> stockData, string? ticker)
     {
         if (string.IsNullOrWhiteSpace(ticker))
         {
@@ -288,7 +285,7 @@ public abstract class GeneralStockService
     /// using the current price.
     /// </summary>
     /// <param name="assetSummary">The asset summary to update.</param>
-    private void AddSummaryQty(AssetSummaryItem assetSummary)
+    private static void AddSummaryQty(AssetSummaryItem assetSummary)
     {
         assetSummary.Qty++;
         assetSummary.PurchaseTotal += assetSummary.CurrentPrice ?? decimal.Zero;
@@ -299,25 +296,27 @@ public abstract class GeneralStockService
     /// </summary>
     /// <param name="result">The list of current recommendations to update.</param>
     /// <param name="assetSummary">The asset summary to base the recommendation on.</param>
+    /// <param name="expectedPercent"></param>
     private void AddRecommendation(List<AssetRecommendation> result, AssetSummaryItem assetSummary, decimal? expectedPercent)
     {
-        if (assetSummary.Ticker != null)
+        if (assetSummary.Ticker == null)
         {
-            var existing = result.FirstOrDefault(r => r.Ticker == assetSummary.Ticker);
-            if (existing != null)
-            {
-                var newAsset = existing.NewAsset;
-                var reason = newAsset 
-                    ? $"{existing.Reason} Expected in portfolio {expectedPercent}%"
-                    : existing.Reason;
-                result.Remove(existing);
-                result.Add(new AssetRecommendation(assetSummary.Ticker, reason, existing.Qty + 1));
-            }
-            else
-            {
-                var reason = $"Current percent in portfolio is {assetSummary.Percent}%, expected {expectedPercent}%";
-                result.Add(new AssetRecommendation(assetSummary.Ticker, reason));
-            }
+            return;
+        }
+        var existing = result.FirstOrDefault(r => r.Ticker == assetSummary.Ticker);
+        if (existing != null)
+        {
+            var newAsset = existing.NewAsset;
+            var reason = newAsset 
+                ? $"{existing.Reason} Expected in portfolio {expectedPercent}%"
+                : existing.Reason;
+            result.Remove(existing);
+            result.Add(new AssetRecommendation(assetSummary.Ticker, reason, existing.Qty + 1));
+        }
+        else
+        {
+            var reason = $"Current percent in portfolio is {assetSummary.Percent}%, expected {expectedPercent}%";
+            result.Add(new AssetRecommendation(assetSummary.Ticker, reason));
         }
     }
 }
