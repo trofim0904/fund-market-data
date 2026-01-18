@@ -103,7 +103,7 @@ public partial class MainViewModel : ObservableObject
 
     #region Recommendations Tab
     [ObservableProperty] 
-    private string _amountToInvest = string.Empty;
+    private decimal _amountToInvest = decimal.Zero;
 
     [ObservableProperty]
     private ObservableCollection<AssetRecommendation> _recommendations = new();
@@ -111,18 +111,15 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private async Task RecommendAssetsAsync()
     {
-        if (!string.IsNullOrWhiteSpace(AmountToInvest))
+        try 
+        { 
+            Recommendations =
+                new ObservableCollection<AssetRecommendation>(
+                    await _stockService.GetAssetRecommendation(AmountToInvest, _reader));
+        }
+        catch (Exception e)
         {
-            try 
-            { 
-                Recommendations =
-                    new ObservableCollection<AssetRecommendation>(
-                        await _stockService.GetAssetRecommendation(AmountToInvest, _reader));
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.Message);
-            }
+            MessageBox.Show(e.Message);
         }
     }
     #endregion
