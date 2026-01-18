@@ -30,7 +30,7 @@ public partial class MainViewModel : ObservableObject
     private string _newTicker = string.Empty;
 
     [ObservableProperty] 
-    private ObservableCollection<Ticker> _tickers = new();
+    private ObservableCollection<Ticker> _tickers = [];
 
     [ObservableProperty] 
     private Ticker? _selectedTicker;
@@ -82,7 +82,7 @@ public partial class MainViewModel : ObservableObject
 
     #region Bought Assets Tab
     [ObservableProperty] 
-    private ObservableCollection<AssetSummaryItem> _boughtAssets = new();
+    private ObservableCollection<AssetSummaryItem> _boughtAssets = [];
 
     [ObservableProperty]
     private AssetsSummary _assetSummary = new();
@@ -106,7 +106,7 @@ public partial class MainViewModel : ObservableObject
     private decimal _amountToInvest = decimal.Zero;
 
     [ObservableProperty]
-    private ObservableCollection<AssetRecommendation> _recommendations = new();
+    private ObservableCollection<AssetRecommendation> _recommendations = [];
 
     [RelayCommand]
     private async Task RecommendAssetsAsync()
@@ -155,7 +155,7 @@ public partial class MainViewModel : ObservableObject
             return;
         }
         await _stockService.SellAsset(SellOrder.Asset.ToUpper(), SellOrder.Qty, SellOrder.Price, SellOrder.Date);
-        SellOrder = new SellOrder()
+        SellOrder = new SellOrder
         {
             Status = "Completed"
         };
@@ -163,17 +163,14 @@ public partial class MainViewModel : ObservableObject
     #endregion
 
     #region Internal Methods
-    private IEnumerable<Ticker> Map(IEnumerable<EFTicker> tickers)
+    private static IEnumerable<Ticker> Map(IEnumerable<EFTicker> tickers)
     {
-        foreach (var ticker in tickers)
+        return tickers.Select(ticker => new Ticker
         {
-            yield return new Ticker()
-            {
-                Name = ticker.Name,
-                ExpectedPercent = ticker.ExpectedPercent ?? decimal.Zero,
-                IsIgnored = ticker.IsIgnored == true
-            };
-        }
+            Name = ticker.Name,
+            ExpectedPercent = ticker.ExpectedPercent ?? decimal.Zero,
+            IsIgnored = ticker.IsIgnored == true
+        });
     }
     #endregion
 }

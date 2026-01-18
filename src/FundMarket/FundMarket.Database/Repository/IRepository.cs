@@ -13,8 +13,4 @@ public interface IRepository<T> : IAsyncDisposable where T : class
     void Delete(T record);
 
     void Update(T record);
-
-    void Save();
-
-    Task SaveAsync();
 }

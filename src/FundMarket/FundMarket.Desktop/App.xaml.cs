@@ -13,7 +13,7 @@ namespace FundMarket.Desktop;
 /// <summary>
 /// Interaction logic for App.xaml
 /// </summary>
-public partial class App : Application
+public partial class App
 {
     public static ServiceProvider Services { get; private set; } = null!;
 
@@ -30,7 +30,7 @@ public partial class App : Application
         services.AddSingleton<StockService>();
         services.AddSingleton<IAssetReader>(_ =>
         {
-            string? apiKey = Environment.GetEnvironmentVariable("FinnhubStockApiKey");
+            var apiKey = Environment.GetEnvironmentVariable("FinnhubStockApiKey");
             return new FinnhubStockReader(apiKey);
         });
         // Register ViewModels + Views

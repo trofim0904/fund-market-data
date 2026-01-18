@@ -1,33 +1,17 @@
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace FundMarket.Desktop.Models;
 
-public class Ticker : INotifyPropertyChanged
+public partial class Ticker : ObservableObject
 {
+    [ObservableProperty]
     private string _name = string.Empty;
+
+    [ObservableProperty]
     private bool _isIgnored;
+
+    [ObservableProperty]
     private decimal _expectedPercent;
-
-    public string Name
-    {
-        get => _name;
-        set { _name = value; OnPropertyChanged(); }
-    }
-
-    public bool IsIgnored
-    {
-        get => _isIgnored;
-        set { _isIgnored = value; OnPropertyChanged(); }
-    }
-
-    public decimal ExpectedPercent
-    {
-        get => _expectedPercent;
-        set { _expectedPercent = value; OnPropertyChanged(); }
-    }
-
-    public event PropertyChangedEventHandler? PropertyChanged;
 
     public Ticker() { }
 
@@ -35,7 +19,4 @@ public class Ticker : INotifyPropertyChanged
     {
         Name = name;
     }
-    
-    protected void OnPropertyChanged([CallerMemberName] string? prop = null)
-        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
 }
