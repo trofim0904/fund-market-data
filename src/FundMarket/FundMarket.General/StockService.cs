@@ -182,7 +182,7 @@ public class StockService(UnitOfWork unitOfWork, TextWriter writer) : GeneralSto
         try 
         {
             var assets = await LoadGeneralStockData(unitOfWork, reader, ticker => ticker.IsIgnored != true);
-            foreach (var asset in assets.OrderByDescending(a => a.MarketCap))
+            foreach (var asset in assets)
             {
                 writer.WriteLine(asset);
             }
@@ -307,6 +307,8 @@ public class StockService(UnitOfWork unitOfWork, TextWriter writer) : GeneralSto
         var result = new AssetsSummary();
         var purchases = unitOfWork.PurchaseRepository.Get().ToList();
         var sales = unitOfWork.SaleRepository.Get().ToList();
+        var tickers = unitOfWork.TickerRepository.Get(t => t.IsIgnored != true).ToList();
+        UpdateTickersExpectedPercent(tickers);
         if (purchases.Count != 0)
         {
             var assetSummaries = await GetAssetSummary(unitOfWork, purchases, sales, reader);
@@ -318,6 +320,7 @@ public class StockService(UnitOfWork unitOfWork, TextWriter writer) : GeneralSto
             var totalValue = items.Sum(s => s.CurrentValue);
             foreach (var summary in items.OrderByDescending(s => s.Difference))
             {
+                summary.ExpectedPercent = GetSummaryExpectedPercent(tickers, summary);
                 pnl += summary.Difference ?? decimal.Zero;
                 total += summary.CurrentValue ?? decimal.Zero;
                 best ??= summary;
@@ -339,6 +342,13 @@ public class StockService(UnitOfWork unitOfWork, TextWriter writer) : GeneralSto
             result.WorstAsset = worst?.Ticker;
         }
         return result;
+    }
+
+    private static decimal? GetSummaryExpectedPercent(List<Ticker> tickers, AssetSummaryItem summary)
+    {
+        return tickers
+            .FirstOrDefault(t => t.Name.Equals(summary.Ticker, StringComparison.OrdinalIgnoreCase))
+            ?.ExpectedPercent;
     }
 
     /// <summary>
@@ -374,6 +384,17 @@ public class StockService(UnitOfWork unitOfWork, TextWriter writer) : GeneralSto
     {
         decimal.TryParse(input, out decimal amt);
         return await GetAssetRecommendations(unitOfWork, amt, reader);
+    }
+
+    /// <summary>
+    /// Gets recommended assets to buy based on the specified amount. 
+    /// The method parses the input as a decimal amount and applies internal recommendation logic.
+    /// </summary>
+    /// <param name="input">The investment amount as a decimal (e.g., "1000").</param>
+    /// <returns>A task representing the asynchronous recommendation operation.</returns>
+    public async Task<IEnumerable<AssetRecommendation>> GetAssetRecommendation(decimal input, IAssetReader reader)
+    {
+        return await GetAssetRecommendations(unitOfWork, input, reader);
     }
 
     /// <summary>

@@ -119,7 +119,6 @@ public abstract class GeneralStockService
     protected async Task<IEnumerable<AssetRecommendation>> GetAssetRecommendations(UnitOfWork unitOfWork, decimal amt,
         IAssetReader reader)
     {
-        const int tiers = 5;
         var result = new List<AssetRecommendation>();
         var summary = new List<AssetSummaryItem>();
         var allTickers = GetTickers(unitOfWork);
@@ -129,6 +128,7 @@ public abstract class GeneralStockService
         var sales = GetSales(unitOfWork, tickersToIgnore);
         var stockData = (await LoadGeneralStockData(unitOfWork, reader, ticker => ticker.IsIgnored != true)).ToList();
         var notBoughtTickers = GetNotBoughtTickers(tickers, purchases);
+        UpdateTickersExpectedPercent(tickers);
         // Initial recommendation: one share of each not yet bought ticker (if affordable)
         foreach (var ticker in notBoughtTickers)
         {
@@ -142,38 +142,19 @@ public abstract class GeneralStockService
         }
         // Add existing purchase summaries
         summary.AddRange(GetAssetSummary(purchases, sales, stockData.ToList()));
-        var maxMarketCap = stockData.Max(d => d.MarketCap);
-        var minMarketCap = stockData.Min(d => d.MarketCap);
         // Iteratively recommend assets until no more valid recommendations can be made
         bool recommendationMade;
         do
         {
             var totalValue = summary.Sum(s => s.CurrentValue) ?? decimal.Zero;
-            // Assign percent weight and tier to each summary item
+            // Assign percent weight to each summary item
             foreach (var item in summary)
             {
-                var cap = stockData.First(s => s.Ticker == item.Ticker).MarketCap;
                 item.Percent = Math.Round((item.CurrentValue ?? decimal.Zero) * 100m / totalValue, 2);
-                if (tickers.FirstOrDefault(t => t.Name == item.Ticker) is { ExpectedPercent: not null })
-                {
-                    item.Tier = 0;
-                }
-                else
-                {
-                    item.Tier = GetTier(tiers, maxMarketCap, minMarketCap, cap);
-                }
+                item.ExpectedPercent = GetExpectedPercent(item, tickers);
             }
-            // do in new loop as we need tier of all items 
-            foreach (var assetSummary in summary)
-            {
-                assetSummary.ExpectedPercent = GetExpectedPercent(summary, assetSummary, tickers);
-            }
-            // Filter out assets where current percent >= expected percent for the tier
-            var underweightAssets = summary
-                .Where(s => s.Percent < s.ExpectedPercent)
-                .OrderByDescending(s => s.ExpectedPercent - s.Percent)
-                .ThenBy(s => s.Difference)
-                .ToList();
+            // Filter out assets where current percent >= expected percent
+            var underweightAssets = GetUnderweightAssets(summary);
             recommendationMade = false;
             foreach (var asset in underweightAssets)
             {
@@ -190,6 +171,15 @@ public abstract class GeneralStockService
         return result;
     }
 
+    private static List<AssetSummaryItem> GetUnderweightAssets(List<AssetSummaryItem> summary)
+    {
+        return summary
+            .Where(s => s.Percent < s.ExpectedPercent)
+            .OrderByDescending(s => s.ExpectedPercent - s.Percent)
+            .ThenBy(s => s.Difference)
+            .ToList();
+    }
+
     private static List<AssetSale> GetSales(UnitOfWork unitOfWork, HashSet<string> tickersToIgnore)
     {
         return unitOfWork.SaleRepository.Get(s => s.Ticker != null && !tickersToIgnore.Contains(s.Ticker)).ToList();
@@ -202,9 +192,29 @@ public abstract class GeneralStockService
 
     private static List<Ticker> GetTickers(UnitOfWork unitOfWork)
     {
-        return unitOfWork.TickerRepository.Get().ToList();
+        var tickers = unitOfWork.TickerRepository.Get().ToList();
+        return tickers;
     }
 
+    protected static void UpdateTickersExpectedPercent(List<Ticker> tickers)
+    {
+        var expectedPercentTotal = tickers
+            .Where(t => t.ExpectedPercent is not null)
+            .Sum(t => t.ExpectedPercent) ?? decimal.Zero;
+        var ticketsWithoutPercentCount = tickers.Count(t => t.ExpectedPercent is null or decimal.Zero);
+        var leftPercentTotal = 100 - expectedPercentTotal;
+        var percentToSet = decimal.Zero;
+        if (leftPercentTotal > decimal.Zero)
+        {
+            decimal result = leftPercentTotal / ticketsWithoutPercentCount;
+            percentToSet = Math.Round(result, 2);
+        }
+        foreach (var ticker in tickers.Where(t => t.ExpectedPercent is null or decimal.Zero))
+        {
+            ticker.ExpectedPercent = percentToSet;
+        }
+    }
+    
     private static void AddNewItemToSummary(List<AssetSummaryItem> summary, Asset asset)
     {
         summary.Add(new AssetSummaryItem
@@ -262,32 +272,15 @@ public abstract class GeneralStockService
     /// based on the ratio of its tier value to the total sum of all tier values in the summary list.
     /// Assumes higher tiers imply a greater expected share.
     /// </summary>
-    /// <param name="summary">The list of all asset summaries.</param>
     /// <param name="current">The current asset summary whose tier allocation is being evaluated.</param>
     /// <param name="tickers">The tickets that might have expected percent.</param>
     /// <returns>
     /// A decimal representing the percentage share this tier is expected to hold in the overall distribution.
     /// </returns>
-    protected static decimal? GetExpectedPercent(List<AssetSummaryItem> summary, AssetSummaryItem current,
+    protected static decimal? GetExpectedPercent(AssetSummaryItem current,
         List<Ticker> tickers)
     {
-        if (tickers.FirstOrDefault(t => t.Name == current.Ticker) is { ExpectedPercent: not null } ticker)
-        {
-            return ticker.ExpectedPercent;
-        }
-        var expectedPercentTotal = tickers
-            .Where(t => t.ExpectedPercent is not null)
-            .Sum(t => t.ExpectedPercent) ?? decimal.Zero;
-        var leftPercentTotal = 100 - expectedPercentTotal;
-        if (leftPercentTotal > 0)
-        {
-            int currentTier = current.Tier!.Value;
-            int totalTier = summary.Sum(s => s.Tier!.Value);
-            decimal result = currentTier * 100m / totalTier;
-            result = result * leftPercentTotal / expectedPercentTotal;
-            return Math.Round(result, 2);
-        }
-        return decimal.Zero;
+        return tickers.FirstOrDefault(t => t.Name == current.Ticker)?.ExpectedPercent ?? decimal.Zero;
     }
 
     /// <summary>
@@ -306,7 +299,6 @@ public abstract class GeneralStockService
     /// </summary>
     /// <param name="result">The list of current recommendations to update.</param>
     /// <param name="assetSummary">The asset summary to base the recommendation on.</param>
-    /// <param name="s"></param>
     private void AddRecommendation(List<AssetRecommendation> result, AssetSummaryItem assetSummary, decimal? expectedPercent)
     {
         if (assetSummary.Ticker != null)
@@ -327,39 +319,5 @@ public abstract class GeneralStockService
                 result.Add(new AssetRecommendation(assetSummary.Ticker, reason));
             }
         }
-    }
-
-    /// <summary>
-    /// Maps an asset’s <see cref="AssetSummaryItem.MarketCapRatio"/> to a tier in the range 1 -> tierCount.
-    /// A logarithmic scale is used so that the wide is distributed evenly.
-    /// Tier 1 corresponds to the smallest ratios, <paramref name="tierCount"/> to the largest.
-    /// </summary>
-    /// <param name="tierCount">How many tiers you want (must be ≥ 1).</param>
-    /// <param name="maxMarketCap">Max Market Cap</param>
-    /// <param name="minMarketCap">Min Market Cap</param>
-    /// <param name="cap">Current Market Cap</param>
-    /// <returns>The tier index, from 1 up to <paramref name="tierCount"/>.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">
-    /// Thrown when <paramref name="tierCount"/> is less than 1.
-    /// </exception>
-    private int GetTier(int tierCount, decimal maxMarketCap, decimal minMarketCap, decimal cap)
-    {
-        if (tierCount < 1)
-        {
-            throw new ArgumentOutOfRangeException(nameof(tierCount), "Tier count must be at least 1.");
-        }
-        // Clamp to the expected range to avoid Log10 issues or out‑of‑range results
-        decimal minRatio = minMarketCap;
-        decimal maxRatio = maxMarketCap;
-        decimal ratio = Math.Clamp(cap, minRatio, maxRatio);
-        // Convert to double for Math.Log10, then normalise to 0‑1
-        double logRatio = Math.Log10((double)ratio);
-        double logMin = Math.Log10((double)minRatio);
-        double logMax = Math.Log10((double)maxRatio);
-        double normalised = (logRatio - logMin) / (logMax - logMin); // 0 → 1
-        // Scale to the requested tier count (1‑based)
-        int tier = (int)Math.Floor(normalised * tierCount) + 1;
-        // Guard against rounding putting us above the maximum
-        return tier > tierCount ? tierCount : tier;
     }
 }

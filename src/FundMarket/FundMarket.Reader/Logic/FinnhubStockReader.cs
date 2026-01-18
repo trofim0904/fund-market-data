@@ -7,7 +7,7 @@ public class FinnhubStockReader : IAssetReader
 {
     private const int ApiRequestPerMinute = 58;
 
-    private int _requestCount = 0;
+    private int _requestCount;
     private static readonly Lock Lock = new();
     private static readonly HttpClient HttpClient = new();
     private readonly string _apiKey;
@@ -34,8 +34,7 @@ public class FinnhubStockReader : IAssetReader
             _requestCount += 2;
         }
         var price = await GetPrice(ticker);
-        var marketCap = await GetMarketCap(ticker);
-        return new Asset(ticker, price, price, marketCap);
+        return new Asset(ticker, price, price);
     }
 
     public IEnumerable<Asset> GetAssets(IEnumerable<string> tickers)
@@ -70,30 +69,5 @@ public class FinnhubStockReader : IAssetReader
             throw new Exception($"Price not found for {ticker}");
         }
         return price;
-    }
-
-    private async Task<decimal> GetMarketCap(string ticker)
-    {
-        const string marketCapSymbol = "marketCapitalization";
-        decimal marketCap = decimal.Zero;
-        if (Constants.MarketCap.ETF.TryGetValue(ticker, out var cap))
-        {
-            marketCap = cap;
-        }
-        else
-        {
-            string marketUrl = $"https://finnhub.io/api/v1/stock/profile2?symbol={ticker.ToUpper()}&token={_apiKey}";
-            var marketResponse = await HttpClient.GetStringAsync(marketUrl);
-            using var marketJson = JsonDocument.Parse(marketResponse);
-            if (marketJson.RootElement.TryGetProperty(marketCapSymbol, out var capElement))
-            {
-                marketCap = capElement.GetDecimal() * 1_000_000;
-            }
-        }
-        if (marketCap == decimal.Zero)
-        {
-            throw new Exception($"Market Capitalization not found for {ticker}");
-        }
-        return marketCap;
     }
 }

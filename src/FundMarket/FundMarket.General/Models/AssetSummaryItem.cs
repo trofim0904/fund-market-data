@@ -20,8 +20,6 @@ public class AssetSummaryItem
     
     public decimal? ExpectedPercent { get; set; }
 
-    public int? Tier { get; set; }
-
     public override string ToString()
     {
         return
