@@ -10,6 +10,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FundMarket.Mapper", "FundMa
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FundMarket.General", "FundMarket.General\FundMarket.General.csproj", "{32428807-824C-40D1-AAD1-A37430D6738F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FundMarket.Desktop", "FundMarket.Desktop\FundMarket.Desktop.csproj", "{3C35B035-346D-4EBB-A627-51AED9BA86C0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,5 +38,9 @@ Global
 		{32428807-824C-40D1-AAD1-A37430D6738F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{32428807-824C-40D1-AAD1-A37430D6738F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{32428807-824C-40D1-AAD1-A37430D6738F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3C35B035-346D-4EBB-A627-51AED9BA86C0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3C35B035-346D-4EBB-A627-51AED9BA86C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3C35B035-346D-4EBB-A627-51AED9BA86C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3C35B035-346D-4EBB-A627-51AED9BA86C0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

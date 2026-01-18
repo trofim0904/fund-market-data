@@ -5,10 +5,10 @@ namespace FundMarket.Database.Repository;
 public class Repository<T>(StockMarketContext stockMarketContext) : IRepository<T> where T : class
 {
     public IEnumerable<T> Get() => 
-        stockMarketContext.Set<T>().ToList();
+        stockMarketContext.Set<T>();
 
     public IEnumerable<T> Get(Expression<Func<T, bool>> predicate) => 
-        stockMarketContext.Set<T>().Where(predicate).ToList();
+        stockMarketContext.Set<T>().Where(predicate);
 
     public void Insert(T record)
     {

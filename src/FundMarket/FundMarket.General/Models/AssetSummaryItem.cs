@@ -1,6 +1,6 @@
 namespace FundMarket.Helper.Models;
 
-public class AssetSummary
+public class AssetSummaryItem
 {
     public string? Ticker { get; init; }
 

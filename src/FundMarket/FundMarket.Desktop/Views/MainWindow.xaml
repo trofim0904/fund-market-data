@@ -1,0 +1,398 @@
+<Window x:Class="FundMarket.Desktop.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:vm="clr-namespace:FundMarket.Desktop.ViewModels"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        Title="FundMarket Dashboard"
+        Height="600" Width="900"
+        mc:Ignorable="d">
+    
+    <Grid Margin="12">
+        <!-- 🔹 Resources -->
+        <Grid.Resources>
+            <!-- Rounded button -->
+            <Style x:Key="RoundedButtonStyle" TargetType="Button">
+                <Setter Property="Background" Value="#4C9AFF"/>
+                <Setter Property="Foreground" Value="White"/>
+                <Setter Property="Padding" Value="12,6"/>
+                <Setter Property="Margin" Value="5"/>
+                <Setter Property="FontWeight" Value="Bold"/>
+                <Setter Property="BorderBrush" Value="#3074E0"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="6">
+                                <ContentPresenter HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"
+                                                  Margin="4,2"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#66B2FF"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter Property="Background" Value="#1E90FF"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            
+            <!-- Rounded text box -->
+            <Style x:Key="RoundedTextBoxStyle" TargetType="TextBox">
+                <Setter Property="Background" Value="White"/>
+                <Setter Property="Foreground" Value="Black"/>
+                <Setter Property="Padding" Value="12,6"/>
+                <Setter Property="FontWeight" Value="Bold"/>
+                <Setter Property="BorderBrush" Value="#3074E0"/>
+                <Setter Property="BorderThickness" Value="2"/>
+            </Style>
+            
+            <!-- Rounded TextBlock -->
+            <Style x:Key="RoundedTextBlockStyle" TargetType="TextBlock">
+                <Setter Property="Background" Value="White"/>
+                <Setter Property="Foreground" Value="Black"/>
+                <Setter Property="Padding" Value="0,6,12,6"/>
+                <Setter Property="FontWeight" Value="Bold"/>
+            </Style>
+            
+            <!-- Rounded DatePicker -->
+            <Style x:Key="RoundedDatePickerStyle" TargetType="DatePicker">
+                <Setter Property="Background" Value="White"/>
+                <Setter Property="Foreground" Value="Black"/>
+                <Setter Property="Padding" Value="0,6,12,6"/>
+                <Setter Property="FontWeight" Value="Bold"/>
+                <Setter Property="BorderBrush" Value="#3074E0"/>
+                <Setter Property="BorderThickness" Value="2"/>
+            </Style>
+            
+            <!-- Hover effect for rows -->
+            <Style TargetType="DataGridRow">
+                <Setter Property="Background" Value="White"/>
+                <Setter Property="BorderBrush" Value="Transparent"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Cursor" Value="Arrow"/>
+                <Setter Property="SnapsToDevicePixels" Value="True"/>
+                <Setter Property="Validation.ErrorTemplate" Value="{x:Null}"/>
+                <Style.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Background" Value="#E8F2FF"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <!-- Header style -->
+            <Style TargetType="DataGridColumnHeader">
+                <Setter Property="Background" Value="#4C9AFF"/>
+                <Setter Property="Foreground" Value="White"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="Height" Value="30"/>
+                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                <Setter Property="BorderBrush" Value="#3074E0"/>
+                <Setter Property="BorderThickness" Value="0,0,1,0"/>
+            </Style>
+        </Grid.Resources>
+        <TabControl>
+            <TabItem Header="Tickers">
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <!-- 🔹 Top bar -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,10">
+                        <TextBox Width="200" 
+                                 Margin="0,6,10,5"
+                                 Padding="5,5,5,5"
+                                 Text="{Binding NewTicker, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource RoundedTextBoxStyle}"/>
+                        <Button Content="Add Ticker"
+                                Command="{Binding AddTickerCommand}"
+                                Style="{StaticResource RoundedButtonStyle}" />
+                        <Button Content="Save Selected"
+                                Command="{Binding SaveTickerCommand}"
+                                Style="{StaticResource RoundedButtonStyle}"/>
+                        <Button Content="Save All"
+                                Command="{Binding SaveAllTickersCommand}"
+                                Style="{StaticResource RoundedButtonStyle}"/>
+                        <Button Content="Delete Selected"
+                                Command="{Binding DeleteTickerCommand}"
+                                Style="{StaticResource RoundedButtonStyle}"/>
+                    </StackPanel>
+                    <!-- 🔹 Data grid -->
+                    <Border Grid.Row="1" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Padding="5">
+                        <DataGrid ItemsSource="{Binding Tickers}"
+                                  SelectedItem="{Binding SelectedTicker}"
+                                  AutoGenerateColumns="False"
+                                  AlternatingRowBackground="#F7F9FC"
+                                  RowBackground="White"
+                                  GridLinesVisibility="None"
+                                  HeadersVisibility="Column"
+                                  BorderThickness="0"
+                                  CanUserAddRows="False"
+                                  CanUserDeleteRows="False">
+
+                            <!-- Columns (excluding ExpectedPercent & Tier) -->
+                            <DataGrid.Columns>
+
+                                <!-- Name -->
+                                <DataGridTextColumn Header="Name"
+                                                    Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                                                    Width="*" />
+
+                                <!-- Is Ignored -->
+                                <DataGridCheckBoxColumn Header="Is Ignored"
+                                                        Binding="{Binding IsIgnored}"
+                                                        Width="*" />
+
+                                <!-- Expected Percent -->
+                                <DataGridTextColumn Header="Expected Percent"
+                                                    Binding="{Binding ExpectedPercent,
+                                                    UpdateSourceTrigger=PropertyChanged,
+                                                    StringFormat={}{0:N2}}"
+                                                    Width="*" />
+
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Buy">
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- 🔹 Top bar -->
+                    <StackPanel Orientation="Vertical" HorizontalAlignment="Stretch" Margin="0,0,0,10">
+                        <TextBlock Text="Asset" 
+                                   Style="{StaticResource RoundedTextBlockStyle}"/>
+                        <TextBox Margin="0,6,10,5"
+                                 Padding="5,5,5,5"
+                                 Text="{Binding BuyOrder.Asset, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource RoundedTextBoxStyle}"/>
+                        <TextBlock Text="Qty" 
+                                   Style="{StaticResource RoundedTextBlockStyle}"/>
+                        <TextBox Margin="0,6,10,5"
+                                 Padding="5,5,5,5"
+                                 Text="{Binding BuyOrder.Qty, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource RoundedTextBoxStyle}"/>
+                        <TextBlock Text="Price" 
+                                   Style="{StaticResource RoundedTextBlockStyle}"/>
+                        <TextBox Margin="0,6,10,5"
+                                 Padding="5,5,5,5"
+                                 Text="{Binding BuyOrder.Price, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:N2}}"
+                                 Style="{StaticResource RoundedTextBoxStyle}"/>
+                        <TextBlock Text="Date" 
+                                   Style="{StaticResource RoundedTextBlockStyle}"/>
+                        <DatePicker Margin="0,6,10,5"
+                                    Padding="5,5,5,5"
+                                    Text="{Binding BuyOrder.Date, UpdateSourceTrigger=PropertyChanged}"
+                                    Style="{StaticResource RoundedDatePickerStyle}"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch" Margin="0,0,0,10">
+                            <Button Width="100"
+                                    Height="30"
+                                    HorizontalAlignment="Left"
+                                    Margin="0,6,10,5"
+                                    Padding="5,5,5,5"
+                                    Content="Buy"
+                                    Command="{Binding BuyAssetCommand}"
+                                    Style="{StaticResource RoundedButtonStyle}" />
+                            <TextBlock Text="{Binding BuyOrder.Status, UpdateSourceTrigger=PropertyChanged}" 
+                                       Style="{StaticResource RoundedTextBlockStyle}"
+                                       Foreground="Green"
+                                       FontSize="25"/>
+                            </StackPanel>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+            
+            <TabItem Header="Sell">
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- 🔹 Top bar -->
+                    <StackPanel Orientation="Vertical" HorizontalAlignment="Stretch" Margin="0,0,0,10">
+                        <TextBlock Text="Asset" 
+                                   Style="{StaticResource RoundedTextBlockStyle}"/>
+                        <TextBox Margin="0,6,10,5"
+                                 Padding="5,5,5,5"
+                                 Text="{Binding SellOrder.Asset, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource RoundedTextBoxStyle}"/>
+                        <TextBlock Text="Qty" 
+                                   Style="{StaticResource RoundedTextBlockStyle}"/>
+                        <TextBox Margin="0,6,10,5"
+                                 Padding="5,5,5,5"
+                                 Text="{Binding SellOrder.Qty, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource RoundedTextBoxStyle}"/>
+                        <TextBlock Text="Price" 
+                                   Style="{StaticResource RoundedTextBlockStyle}"/>
+                        <TextBox Margin="0,6,10,5"
+                                 Padding="5,5,5,5"
+                                 Text="{Binding SellOrder.Price, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:N2}}"
+                                 Style="{StaticResource RoundedTextBoxStyle}"/>
+                        <TextBlock Text="Date" 
+                                   Style="{StaticResource RoundedTextBlockStyle}"/>
+                        <DatePicker Margin="0,6,10,5"
+                                    Padding="5,5,5,5"
+                                    Text="{Binding SellOrder.Date, UpdateSourceTrigger=PropertyChanged}"
+                                    Style="{StaticResource RoundedDatePickerStyle}"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch" Margin="0,0,0,10">
+                            <Button Width="100"
+                                    Height="30"
+                                    HorizontalAlignment="Left"
+                                    Margin="0,6,10,5"
+                                    Padding="5,5,5,5"
+                                    Content="Sell"
+                                    Command="{Binding SellAssetCommand}"
+                                    Style="{StaticResource RoundedButtonStyle}" />
+                            <TextBlock Text="{Binding SellOrder.Status, UpdateSourceTrigger=PropertyChanged}" 
+                                       Style="{StaticResource RoundedTextBlockStyle}"
+                                       Foreground="Green"
+                                       FontSize="25"/>
+                            </StackPanel>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+            
+            <TabItem Header="Totals">
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- 🔹 Top bar -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,10">
+                        <TextBox Width="200" 
+                                 IsReadOnly="True"
+                                 Visibility="Hidden"
+                                 Margin="0,6,10,5"
+                                 Padding="5,5,5,5"
+                                 Style="{StaticResource RoundedTextBoxStyle}"/>
+                        <Button Margin="0,6,10,5"
+                                Padding="5,5,5,5"
+                                Content="Load Assets"
+                                Command="{Binding SeeBoughtAssetsCommand}"
+                                Style="{StaticResource RoundedButtonStyle}" />
+                    </StackPanel>
+
+                    <!-- 🔹 Data grid -->
+                    <Border Grid.Row="1" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Padding="5">
+                        <DataGrid ItemsSource="{Binding AssetSummary.Assets}"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  AlternatingRowBackground="#F7F9FC"
+                                  RowBackground="White"
+                                  GridLinesVisibility="None"
+                                  HeadersVisibility="Column"
+                                  BorderThickness="0"
+                                  CanUserAddRows="False"
+                                  SelectionMode="Single"
+                                  SelectionUnit="FullRow">
+
+                            <!-- Columns (excluding ExpectedPercent & Tier) -->
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Ticker" Binding="{Binding Ticker}" Width="Auto" />
+                                <DataGridTextColumn Header="Qty" Binding="{Binding Qty}" Width="Auto" />
+                                <DataGridTextColumn Header="Avg Price" Binding="{Binding AvgPrice, StringFormat={}{0:N2}}" Width="*" />
+                                <DataGridTextColumn Header="Purchase Total" Binding="{Binding PurchaseTotal, StringFormat={}{0:N2}}" Width="*" />
+                                <DataGridTextColumn Header="Current Price" Binding="{Binding CurrentPrice, StringFormat={}{0:N2}}" Width="*" />
+                                <DataGridTextColumn Header="Current Value" Binding="{Binding CurrentValue, StringFormat={}{0:N2}}" Width="*" />
+                                <DataGridTextColumn Header="Difference" Binding="{Binding Difference, StringFormat={}{0:N2}}" Width="*" />
+                                <DataGridTextColumn Header="Percent" Binding="{Binding Percent, StringFormat={}{0:N2}}" Width="*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Border>
+
+                    <!-- 🔹 Summary info -->
+                    <StackPanel Grid.Row="2"
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Left"
+                                Margin="0,10,0,0">
+                        <StackPanel Margin="0,0,10,0">
+                            <TextBlock Text="Total Value" FontWeight="Bold" Margin="0,0,0,2"/>
+                            <TextBox Width="150" IsReadOnly="True"
+                                     Text="{Binding AssetSummary.TotalValue, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+                        <StackPanel Margin="0,0,10,0">
+                            <TextBlock Text="Total PnL" FontWeight="Bold" Margin="0,0,0,2"/>
+                            <TextBox Width="150" IsReadOnly="True"
+                                     Text="{Binding AssetSummary.TotalPnL, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+                        <StackPanel Margin="0,0,10,0">
+                            <TextBlock Text="Best Asset" FontWeight="Bold" Margin="0,0,0,2"/>
+                            <TextBox Width="150" IsReadOnly="True"
+                                     Text="{Binding AssetSummary.BestAsset, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock Text="Worst Asset" FontWeight="Bold" Margin="0,0,0,2"/>
+                            <TextBox Width="150" IsReadOnly="True"
+                                     Text="{Binding AssetSummary.WorstAsset, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+
+
+
+            <TabItem Header="Recommendations">
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,10">
+                        <TextBox Width="200" 
+                                 Margin="0,6,10,5"
+                                 Padding="5,5,5,5"
+                                 Text="{Binding AmountToInvest, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource RoundedTextBoxStyle}"/>
+                        <Button Content="Recommend Assets"
+                                Command="{Binding RecommendAssetsCommand}"
+                                Style="{StaticResource RoundedButtonStyle}" />
+                    </StackPanel>
+                    <Border Grid.Row="1" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Padding="5">
+                        <DataGrid ItemsSource="{Binding Recommendations}"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  AlternatingRowBackground="#F7F9FC"
+                                  RowBackground="White"
+                                  GridLinesVisibility="None"
+                                  HeadersVisibility="Column"
+                                  BorderThickness="0"
+                                  CanUserAddRows="False"
+                                  SelectionMode="Single"
+                                  SelectionUnit="FullRow">
+                            
+                            <DataGrid.Columns>
+                                <DataGridCheckBoxColumn Header="New" Binding="{Binding NewAsset, UpdateSourceTrigger=PropertyChanged}" Width="Auto" />
+                                <DataGridTextColumn Header="Name" Binding="{Binding Ticker, UpdateSourceTrigger=PropertyChanged}" Width="Auto" />
+                                <DataGridTextColumn Header="Qty" Binding="{Binding Qty, UpdateSourceTrigger=PropertyChanged}" Width="Auto" />
+                                <DataGridTextColumn Header="Reason" Binding="{Binding Reason, UpdateSourceTrigger=PropertyChanged}" Width="*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Border>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Window>

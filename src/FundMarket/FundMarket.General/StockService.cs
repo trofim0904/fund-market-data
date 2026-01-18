@@ -1,5 +1,6 @@
 using System.Globalization;
 using FundMarket.Database;
+using FundMarket.Database.Models;
 using FundMarket.Helper.Models;
 using FundMarket.Mapper;
 using FundMarket.Reader.Logic;
@@ -38,22 +39,23 @@ public class StockService(UnitOfWork unitOfWork, TextWriter writer) : GeneralSto
     }
 
     /// <summary>
-    /// Displays all saved ticker symbols from the database.
+    /// Gets all saved ticker symbols from the database.
     /// </summary>
-    public void SeeTickers()
+    public IEnumerable<Ticker> GetAllTickers()
     {
         foreach (var ticker in unitOfWork.TickerRepository.Get()
                      .OrderBy(t => t.IsIgnored)
+                     .ThenByDescending(t => t.ExpectedPercent)
                      .ThenBy(t => t.Name))
         {
-            writer.WriteLine(ticker);
+           yield return ticker;
         }
     }
 
     public async Task UpdateExpectedPercent(string? tickerToUpdate, string? percentToUpdate)
     {
-        try 
-        { 
+        try
+        {
             ArgumentNullException.ThrowIfNull(tickerToUpdate);
             ArgumentNullException.ThrowIfNull(percentToUpdate);
             if (decimal.TryParse(percentToUpdate, NumberStyles.Any, CultureInfo.InvariantCulture, out var newPercent))
@@ -85,6 +87,33 @@ public class StockService(UnitOfWork unitOfWork, TextWriter writer) : GeneralSto
         }
     }
 
+    public async Task UpdateExpectedPercent(string? tickerToUpdate, decimal percentToUpdate)
+    {
+        try
+        {
+            ArgumentNullException.ThrowIfNull(tickerToUpdate);
+            tickerToUpdate = tickerToUpdate.Trim().ToUpper();
+            var ticker = unitOfWork.TickerRepository
+                .Get(t => t.Name == tickerToUpdate)
+                .FirstOrDefault();
+            if (ticker != null)
+            {
+                ticker.ExpectedPercent = percentToUpdate;
+                unitOfWork.TickerRepository.Update(ticker);
+                await unitOfWork.SaveChangesAsync();
+                await writer.WriteLineAsync("Ticker percent updated.");
+            }
+            else
+            {
+                await writer.WriteLineAsync("Ticker not found.");
+            }
+        }
+        catch (Exception e)
+        {
+            await writer.WriteLineAsync($"Error: {e.Message}");
+        }
+    }
+
     public async Task UpdateIgnoreFlag(string? tickerToUpdate)
     {
         ArgumentNullException.ThrowIfNull(tickerToUpdate);
@@ -95,6 +124,26 @@ public class StockService(UnitOfWork unitOfWork, TextWriter writer) : GeneralSto
         if (ticker != null)
         {
             ticker.IsIgnored = !(ticker.IsIgnored ?? false);
+            unitOfWork.TickerRepository.Update(ticker);
+            await unitOfWork.SaveChangesAsync();
+            await writer.WriteLineAsync("Ticker flag updated.");
+        }
+        else
+        {
+            await writer.WriteLineAsync("Ticker not found.");
+        }
+    }
+    
+    public async Task UpdateIgnoreFlag(string? tickerToUpdate, bool isIgnored)
+    {
+        ArgumentNullException.ThrowIfNull(tickerToUpdate);
+        tickerToUpdate = tickerToUpdate.Trim().ToUpper();
+        var ticker = unitOfWork.TickerRepository
+            .Get(t => t.Name == tickerToUpdate)
+            .FirstOrDefault();
+        if (ticker != null)
+        {
+            ticker.IsIgnored = isIgnored;
             unitOfWork.TickerRepository.Update(ticker);
             await unitOfWork.SaveChangesAsync();
             await writer.WriteLineAsync("Ticker flag updated.");
@@ -179,54 +228,69 @@ public class StockService(UnitOfWork unitOfWork, TextWriter writer) : GeneralSto
     public async Task BuyAsset(string? ticker, string? qty, string? price, string? date)
     {
         ticker = ticker?.ToUpper();
+        decimal.TryParse(qty, NumberStyles.Any, CultureInfo.InvariantCulture, out var qtyDecimal);
+        decimal.TryParse(price, NumberStyles.Any, CultureInfo.InvariantCulture, out var priceDecimal);
+        if (!DateTime.TryParse(date, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dateTime))
+        {
+            dateTime = DateTime.Today;
+        }
+        await BuyAsset(ticker, qtyDecimal, priceDecimal, dateTime);
+    }
+
+    /// <summary>
+    /// Records a purchase of an asset by saving the ticker, quantity, price, and date to the database.
+    /// </summary>
+    /// <param name="ticker">The stock ticker symbol (e.g., "AAPL").</param>
+    /// <param name="qty">The quantity of the asset to purchase.</param>
+    /// <param name="price">The price per unit of the asset.</param>
+    /// <param name="date">The purchase date.</param>
+    public async Task BuyAsset(string? ticker, decimal qty, decimal price, DateTime? date)
+    {
         if (unitOfWork.TickerRepository.Get(t => t.Name == ticker).Any())
         {
             try
             {
-                decimal.TryParse(qty, NumberStyles.Any, CultureInfo.InvariantCulture, out var qtyDecimal);
-                decimal.TryParse(price, NumberStyles.Any, CultureInfo.InvariantCulture, out var priceDecimal);
-                if (!DateTime.TryParse(date, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dateTime))
-                {
-                    dateTime = DateTime.Today;
-                }
-                unitOfWork.PurchaseRepository.Insert(DBModelMapper.MapPurchase(ticker,qtyDecimal, priceDecimal, dateTime));
+                unitOfWork.PurchaseRepository.Insert(DBModelMapper.MapPurchase(ticker, qty, price, date ?? DateTime.Today));
                 await unitOfWork.SaveChangesAsync();
-                await writer.WriteLineAsync($"Added {qtyDecimal} of {ticker}");
+                await writer.WriteLineAsync($"Added {qty} of {ticker}");
             }
             catch (Exception e)
             {
                 await writer.WriteLineAsync("Error: " + e.Message);
             }
-
         }
         else
         {
             await writer.WriteLineAsync("Invalid ticker");
         }
     }
-    
+
     public async Task SellAsset(string? ticker, string? qty, string? price, string? date)
     {
         ticker = ticker?.ToUpper();
+        decimal.TryParse(qty, NumberStyles.Any, CultureInfo.InvariantCulture, out var qtyDecimal);
+        decimal.TryParse(price, NumberStyles.Any, CultureInfo.InvariantCulture, out var priceDecimal);
+        if (!DateTime.TryParse(date, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dateTime))
+        {
+            dateTime = DateTime.Today;
+        }
+        await SellAsset(ticker, qtyDecimal, priceDecimal, dateTime);
+    }
+    
+    public async Task SellAsset(string? ticker, decimal qty, decimal price, DateTime? date)
+    {
         if (unitOfWork.TickerRepository.Get(t => t.Name == ticker).Any())
         {
             try
             {
-                decimal.TryParse(qty, NumberStyles.Any, CultureInfo.InvariantCulture, out var qtyDecimal);
-                decimal.TryParse(price, NumberStyles.Any, CultureInfo.InvariantCulture, out var priceDecimal);
-                if (!DateTime.TryParse(date, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dateTime))
-                {
-                    dateTime = DateTime.Today;
-                }
-                unitOfWork.SaleRepository.Insert(DBModelMapper.MapSale(ticker,qtyDecimal, priceDecimal, dateTime));
+                unitOfWork.SaleRepository.Insert(DBModelMapper.MapSale(ticker,qty, price, date ?? DateTime.Now));
                 await unitOfWork.SaveChangesAsync();
-                await writer.WriteLineAsync($"Sold {qtyDecimal} of {ticker}");
+                await writer.WriteLineAsync($"Sold {qty} of {ticker}");
             }
             catch (Exception e)
             {
                 await writer.WriteLineAsync("Error: " + e.Message);
             }
-
         }
         else
         {
@@ -235,51 +299,46 @@ public class StockService(UnitOfWork unitOfWork, TextWriter writer) : GeneralSto
     }
 
     /// <summary>
-    /// Displays a summary of all purchased assets, including quantity, average price, current price,
+    /// Gets a summary of all purchased assets, including quantity, average price, current price,
     /// and profit or loss (PnL) for each asset. Also prints the total PnL across all assets.
     /// </summary>
-    public async Task SeeBoughtAssets(IAssetReader reader)
+    public async Task<AssetsSummary> GetBoughtAssets(IAssetReader reader)
     {
-        try 
-        { 
-            var purchases = unitOfWork.PurchaseRepository.Get().ToList();
-            var sales = unitOfWork.SaleRepository.Get().ToList();
-            if (purchases.Count != 0)
-            {
-                var assetSummaries = await GetAssetSummary(unitOfWork, purchases, sales, reader);
-                var items = assetSummaries.ToList();
-                var pnl = decimal.Zero;
-                var total = decimal.Zero;
-                AssetSummary? best = null;
-                AssetSummary? worst = null;
-                var totalValue = items.Sum(s => s.CurrentValue);
-                foreach (var summary in items.OrderByDescending(s => s.Difference))
-                {
-                    pnl += summary.Difference ?? decimal.Zero;
-                    total += summary.CurrentValue ?? decimal.Zero;
-                    best ??= summary;
-                    worst ??= summary;
-                    if (summary.Difference > best.Difference)
-                    {
-                        best = summary;
-                    }
-                    if (summary.Difference < worst.Difference)
-                    {
-                        worst = summary;
-                    }
-                    summary.Percent = summary.CurrentValue * 100m / totalValue;
-                    writer.WriteLine(summary);
-                }
-                await writer.WriteLineAsync($"Total Value: ${total:F2}");
-                await writer.WriteLineAsync($"Total PnL: ${pnl:F2}");
-                await writer.WriteLineAsync($"Best Asset: {best?.Ticker}");
-                await writer.WriteLineAsync($"Worst Asset: {worst?.Ticker}");
-            }
-        }
-        catch (Exception e)
+        var result = new AssetsSummary();
+        var purchases = unitOfWork.PurchaseRepository.Get().ToList();
+        var sales = unitOfWork.SaleRepository.Get().ToList();
+        if (purchases.Count != 0)
         {
-            await writer.WriteLineAsync(e.Message);
+            var assetSummaries = await GetAssetSummary(unitOfWork, purchases, sales, reader);
+            var items = assetSummaries.ToList();
+            var pnl = decimal.Zero;
+            var total = decimal.Zero;
+            AssetSummaryItem? best = null;
+            AssetSummaryItem? worst = null;
+            var totalValue = items.Sum(s => s.CurrentValue);
+            foreach (var summary in items.OrderByDescending(s => s.Difference))
+            {
+                pnl += summary.Difference ?? decimal.Zero;
+                total += summary.CurrentValue ?? decimal.Zero;
+                best ??= summary;
+                worst ??= summary;
+                if (summary.Difference > best.Difference)
+                {
+                    best = summary;
+                }
+                if (summary.Difference < worst.Difference)
+                {
+                    worst = summary;
+                }
+                summary.Percent = summary.CurrentValue * 100m / totalValue;
+                result.Assets.Add(summary);
+            }
+            result.TotalValue = total;
+            result.TotalPnL = pnl;
+            result.BestAsset = best?.Ticker;
+            result.WorstAsset = worst?.Ticker;
         }
+        return result;
     }
 
     /// <summary>
@@ -303,6 +362,18 @@ public class StockService(UnitOfWork unitOfWork, TextWriter writer) : GeneralSto
         {
             await writer.WriteLineAsync("Error: not able to get assets. " + e.Message);
         }
+    }
+
+    /// <summary>
+    /// Gets recommended assets to buy based on the specified amount. 
+    /// The method parses the input as a decimal amount and applies internal recommendation logic.
+    /// </summary>
+    /// <param name="input">The investment amount as a string (e.g., "1000").</param>
+    /// <returns>A task representing the asynchronous recommendation operation.</returns>
+    public async Task<IEnumerable<AssetRecommendation>> GetAssetRecommendation(string? input, IAssetReader reader)
+    {
+        decimal.TryParse(input, out decimal amt);
+        return await GetAssetRecommendations(unitOfWork, amt, reader);
     }
 
     /// <summary>

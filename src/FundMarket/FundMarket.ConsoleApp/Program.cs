@@ -28,7 +28,11 @@ while (isRunning)
             Pause();
             break;
         case "2":
-            stockService.SeeTickers();
+            var tickers = stockService.GetAllTickers();
+            foreach (var ticker in tickers)
+            {
+                Console.WriteLine(ticker);
+            }
             Pause();
             break;
         case "3":
@@ -69,7 +73,15 @@ while (isRunning)
             Pause();
             break;
         case "8":
-            await stockService.SeeBoughtAssets(reader);
+            try 
+            { 
+                var result = await stockService.GetBoughtAssets(reader);
+                Console.WriteLine(result);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
             Pause();
             break;
         case "9":
