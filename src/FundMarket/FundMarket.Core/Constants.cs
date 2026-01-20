@@ -1,4 +1,4 @@
-namespace FundMarket.Helper;
+namespace FundMarket.Core;
 
 public static class Constants
 {

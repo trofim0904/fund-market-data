@@ -3,7 +3,7 @@ using FundMarket.Database.Repository;
 
 namespace FundMarket.Database;
 
-public class UnitOfWork(StockMarketContext stockMarketContext)
+public class UnitOfWork(StockMarketContext stockMarketContext) : IUnitOfWork
 {
     public IRepository<Ticker> TickerRepository { get; } = new Repository<Ticker>(stockMarketContext);
 
@@ -11,8 +11,7 @@ public class UnitOfWork(StockMarketContext stockMarketContext)
 
     public IRepository<AssetSale> SaleRepository { get; } = new Repository<AssetSale>(stockMarketContext);
 
-    public Task SaveChangesAsync()
-    {
-        return stockMarketContext.SaveChangesAsync();
-    }
+    public async Task<int> SaveChangesAsync() => await stockMarketContext.SaveChangesAsync();
+
+    public void Dispose() => stockMarketContext.Dispose();
 }
