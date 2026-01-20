@@ -15,8 +15,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\FundMarket.Database\FundMarket.Database.csproj" />
-      <ProjectReference Include="..\FundMarket.General\FundMarket.General.csproj" />
-      <ProjectReference Include="..\FundMarket.Mapper\FundMarket.Mapper.csproj" />
+      <ProjectReference Include="..\FundMarket.Core\FundMarket.Core.csproj" />
       <ProjectReference Include="..\FundMarket.Reader\FundMarket.Reader.csproj" />
     </ItemGroup>
 

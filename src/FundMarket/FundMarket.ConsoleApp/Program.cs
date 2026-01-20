@@ -1,5 +1,5 @@
-﻿using FundMarket.Database;
-using FundMarket.Helper;
+﻿using FundMarket.Core;
+using FundMarket.Database;
 using FundMarket.Reader.Logic;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,10 +8,10 @@ string? apiKey = Environment.GetEnvironmentVariable("FinnhubStockApiKey");
 DbContextOptionsBuilder optionsBuilder = new();
 optionsBuilder.UseSqlite("Data Source=StockMarket.db");
 await using StockMarketContext context = new StockMarketContext(optionsBuilder.Options);
-UnitOfWork unitOfWork = new UnitOfWork(context);
-// ReSharper disable once UnusedVariable
-StockService stockService = new StockService(unitOfWork, Console.Out);
+IUnitOfWork unitOfWork = new UnitOfWork(context);
 // ReSharper disable once UnusedVariable
 IAssetReader reader = new FinnhubStockReader(apiKey);
+// ReSharper disable once UnusedVariable
+IStockService stockService = new StockDataService(unitOfWork, reader);
 
 // do your tests...

@@ -6,7 +6,6 @@
         Title="FundMarket Dashboard"
         Height="600" Width="900"
         mc:Ignorable="d">
-    
     <Grid Margin="12">
         <!-- 🔹 Resources -->
         <Grid.Resources>

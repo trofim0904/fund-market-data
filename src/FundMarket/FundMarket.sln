@@ -6,9 +6,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FundMarket.Reader", "FundMa
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FundMarket.Database", "FundMarket.Database\FundMarket.Database.csproj", "{FED3A1C4-5FED-42D2-B57D-BBD13FA46506}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FundMarket.Mapper", "FundMarket.Mapper\FundMarket.Mapper.csproj", "{F86A9176-4F5C-40CB-AAA0-2F963EC152F8}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FundMarket.General", "FundMarket.General\FundMarket.General.csproj", "{32428807-824C-40D1-AAD1-A37430D6738F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FundMarket.Core", "FundMarket.Core\FundMarket.Core.csproj", "{32428807-824C-40D1-AAD1-A37430D6738F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FundMarket.Desktop", "FundMarket.Desktop\FundMarket.Desktop.csproj", "{3C35B035-346D-4EBB-A627-51AED9BA86C0}"
 EndProject
@@ -30,10 +28,6 @@ Global
 		{FED3A1C4-5FED-42D2-B57D-BBD13FA46506}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FED3A1C4-5FED-42D2-B57D-BBD13FA46506}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FED3A1C4-5FED-42D2-B57D-BBD13FA46506}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F86A9176-4F5C-40CB-AAA0-2F963EC152F8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F86A9176-4F5C-40CB-AAA0-2F963EC152F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F86A9176-4F5C-40CB-AAA0-2F963EC152F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F86A9176-4F5C-40CB-AAA0-2F963EC152F8}.Release|Any CPU.Build.0 = Release|Any CPU
 		{32428807-824C-40D1-AAD1-A37430D6738F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{32428807-824C-40D1-AAD1-A37430D6738F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{32428807-824C-40D1-AAD1-A37430D6738F}.Release|Any CPU.ActiveCfg = Release|Any CPU

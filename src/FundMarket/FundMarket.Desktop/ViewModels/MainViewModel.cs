@@ -2,26 +2,23 @@ using System.Collections.ObjectModel;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using FundMarket.Core;
+using FundMarket.Core.Models;
 using FundMarket.Desktop.Models;
-using FundMarket.Helper;
-using FundMarket.Helper.Models;
-using FundMarket.Reader.Logic;
 using Ticker = FundMarket.Desktop.Models.Ticker;
 using EFTicker = FundMarket.Database.Models.Ticker;
 
 namespace FundMarket.Desktop.ViewModels;
 
-public partial class MainViewModel : ObservableObject
+public partial class MainViewModel(
+    IStockService stockService,
+    IStockDataRecommendationService recommendationService) : ObservableObject
 {
-    private readonly StockService _stockService;
-    private readonly IAssetReader _reader;
-
-    #region ctor
-    public MainViewModel(StockService stockService, IAssetReader reader)
+    #region Initialize Async
+    public async Task InitializeAsync()
     {
-        _stockService = stockService;
-        _reader = reader;
-        Tickers = new ObservableCollection<Ticker>(Map(stockService.GetAllTickers()));
+        var tickers = await stockService.GetAllTickersAsync();
+        Tickers = new ObservableCollection<Ticker>(Map(tickers));
     }
     #endregion
 
@@ -42,7 +39,7 @@ public partial class MainViewModel : ObservableObject
         {
             return;
         }
-        await _stockService.AddTickersAsync(NewTicker, _reader);
+        await stockService.AddTickerAsync(NewTicker);
         Tickers.Add(new Ticker(NewTicker.ToUpper()));
         NewTicker = string.Empty;
     }
@@ -54,7 +51,7 @@ public partial class MainViewModel : ObservableObject
         {
             return;
         }
-        await _stockService.DeleteTicker(SelectedTicker.Name);
+        await stockService.DeleteTickerAsync(SelectedTicker.Name);
         Tickers.Remove(SelectedTicker);
     }
 
@@ -65,8 +62,7 @@ public partial class MainViewModel : ObservableObject
         {
             return;
         }
-        await _stockService.UpdateExpectedPercent(SelectedTicker.Name, SelectedTicker.ExpectedPercent);
-        await _stockService.UpdateIgnoreFlag(SelectedTicker.Name, SelectedTicker.IsIgnored);
+        await stockService.UpdateTickerAsync(SelectedTicker.Name, SelectedTicker.ExpectedPercent, SelectedTicker.IsIgnored);
     }
 
     [RelayCommand]
@@ -74,8 +70,7 @@ public partial class MainViewModel : ObservableObject
     {
         foreach (var ticker in Tickers)
         {
-            await _stockService.UpdateExpectedPercent(ticker.Name, ticker.ExpectedPercent);
-            await _stockService.UpdateIgnoreFlag(ticker.Name, ticker.IsIgnored);
+            await stockService.UpdateTickerAsync(ticker.Name, ticker.ExpectedPercent, ticker.IsIgnored);
         }
     }
     #endregion
@@ -92,7 +87,7 @@ public partial class MainViewModel : ObservableObject
     {
         try 
         {
-            AssetSummary = await _stockService.GetBoughtAssets(_reader);
+            AssetSummary = await stockService.GetBoughtAssetsAsync();
         }
         catch (Exception e)
         {
@@ -106,16 +101,15 @@ public partial class MainViewModel : ObservableObject
     private decimal _amountToInvest = decimal.Zero;
 
     [ObservableProperty]
-    private ObservableCollection<AssetRecommendation> _recommendations = [];
+    private ObservableCollection<Recommendation> _recommendations = [];
 
     [RelayCommand]
     private async Task RecommendAssetsAsync()
     {
-        try 
-        { 
-            Recommendations =
-                new ObservableCollection<AssetRecommendation>(
-                    await _stockService.GetAssetRecommendation(AmountToInvest, _reader));
+        try
+        {
+            var recommendation = await recommendationService.GetAssetRecommendationAsync(AmountToInvest);
+            Recommendations = new ObservableCollection<Recommendation>(Map(recommendation));
         }
         catch (Exception e)
         {
@@ -135,7 +129,7 @@ public partial class MainViewModel : ObservableObject
         {
             return;
         }
-        await _stockService.BuyAsset(BuyOrder.Asset.ToUpper(), BuyOrder.Qty, BuyOrder.Price, BuyOrder.Date);
+        await stockService.BuyAssetAsync(BuyOrder.Asset.ToUpper(), BuyOrder.Qty, BuyOrder.Price, BuyOrder.Date);
         BuyOrder = new BuyOrder
         {
             Status = "Completed"
@@ -154,7 +148,7 @@ public partial class MainViewModel : ObservableObject
         {
             return;
         }
-        await _stockService.SellAsset(SellOrder.Asset.ToUpper(), SellOrder.Qty, SellOrder.Price, SellOrder.Date);
+        await stockService.SellAssetAsync(SellOrder.Asset.ToUpper(), SellOrder.Qty, SellOrder.Price, SellOrder.Date);
         SellOrder = new SellOrder
         {
             Status = "Completed"
@@ -170,6 +164,17 @@ public partial class MainViewModel : ObservableObject
             Name = ticker.Name,
             ExpectedPercent = ticker.ExpectedPercent ?? decimal.Zero,
             IsIgnored = ticker.IsIgnored == true
+        });
+    }
+
+    private static IEnumerable<Recommendation> Map(IEnumerable<AssetRecommendation> recommendation)
+    {
+        return recommendation.Select(assetRecommendation => new Recommendation
+        {
+            NewAsset = assetRecommendation.NewAsset,
+            Ticker = assetRecommendation.Ticker,
+            Qty = assetRecommendation.Qty,
+            Reason = assetRecommendation.Reason
         });
     }
     #endregion

@@ -1,4 +1,4 @@
-namespace FundMarket.Helper.Models;
+namespace FundMarket.Core.Models;
 
 public class AssetRecommendation(string ticker, string reason, decimal qty = decimal.One)
 {
