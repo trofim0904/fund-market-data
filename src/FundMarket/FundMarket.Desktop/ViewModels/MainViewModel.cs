@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FundMarket.Core;
 using FundMarket.Core.Models;
+using FundMarket.Database.Models;
 using FundMarket.Desktop.Models;
 using Ticker = FundMarket.Desktop.Models.Ticker;
 using EFTicker = FundMarket.Database.Models.Ticker;
@@ -19,6 +20,10 @@ public partial class MainViewModel(
     {
         var tickers = await stockService.GetAllTickersAsync();
         Tickers = new ObservableCollection<Ticker>(Map(tickers));
+        var buyOrders = await stockService.GetAllBuyOrders();
+        BuyOrders = new ObservableCollection<BuyOrder>(Map(buyOrders.OrderByDescending(o => o.Date)));
+        var sellOrders = await stockService.GetAllSellOrders();
+        SellOrders = new ObservableCollection<SellOrder>(Map(sellOrders.OrderByDescending(o => o.Date)));
     }
     #endregion
 
@@ -120,39 +125,111 @@ public partial class MainViewModel(
 
     #region Buy Tab
     [ObservableProperty] 
-    private BuyOrder? _buyOrder = new();
+    private BuyOrder _buyOrder = new();
+    
+    [ObservableProperty] 
+    private BuyOrder _selectedHistoricalBuyOrder = new();
+    
+    [ObservableProperty] 
+    private ObservableCollection<BuyOrder> _buyOrders = [];
 
     [RelayCommand]
     private async Task BuyAssetAsync()
     {
-        if (BuyOrder is null)
-        {
-            return;
-        }
         await stockService.BuyAssetAsync(BuyOrder.Asset.ToUpper(), BuyOrder.Qty, BuyOrder.Price, BuyOrder.Date);
+        BuyOrders.Insert(0, BuyOrder);
         BuyOrder = new BuyOrder
         {
             Status = "Completed"
         };
     }
+
+    [RelayCommand]
+    private async Task DeleteHistoricalBuyOrderAsync()
+    {
+        try 
+        { 
+            await stockService.DeleteBuyAssetOrder(SelectedHistoricalBuyOrder.Id);
+            BuyOrders.Remove(SelectedHistoricalBuyOrder);
+        }
+        catch (Exception)
+        {
+            MessageBox.Show("Cannot delete historical buy order");
+        }
+
+    }
+    
+    [RelayCommand]
+    private async Task SaveHistoricalBuyOrderAsync()
+    {
+        try 
+        { 
+            await stockService.UpdateBuyAssetOrder(
+                SelectedHistoricalBuyOrder.Id,
+                SelectedHistoricalBuyOrder.Asset.ToUpper(),
+                SelectedHistoricalBuyOrder.Qty,
+                SelectedHistoricalBuyOrder.Price,
+                SelectedHistoricalBuyOrder.Date);
+        }
+        catch (Exception)
+        {
+            MessageBox.Show("Cannot update historical buy order");
+        }
+    }
     #endregion
     
-    #region Buy Tab
+    #region Sell Tab
     [ObservableProperty] 
-    private SellOrder? _sellOrder = new();
+    private SellOrder _sellOrder = new();
+    
+    [ObservableProperty] 
+    private SellOrder _selectedHistoricalSellOrder = new();
+    
+    [ObservableProperty] 
+    private ObservableCollection<SellOrder> _sellOrders = [];
 
     [RelayCommand]
     private async Task SellAssetAsync()
     {
-        if (SellOrder is null)
-        {
-            return;
-        }
         await stockService.SellAssetAsync(SellOrder.Asset.ToUpper(), SellOrder.Qty, SellOrder.Price, SellOrder.Date);
+        SellOrders.Insert(0, SellOrder);
         SellOrder = new SellOrder
         {
             Status = "Completed"
         };
+    }
+    
+    [RelayCommand]
+    private async Task DeleteHistoricalSellOrderAsync()
+    {
+        try 
+        { 
+            await stockService.DeleteSellAssetOrder(SelectedHistoricalSellOrder.Id);
+            SellOrders.Remove(SelectedHistoricalSellOrder);
+        }
+        catch (Exception)
+        {
+            MessageBox.Show("Cannot delete historical buy order");
+        }
+
+    }
+    
+    [RelayCommand]
+    private async Task SaveHistoricalSellOrderAsync()
+    {
+        try 
+        { 
+            await stockService.UpdateSellAssetOrder(
+                SelectedHistoricalSellOrder.Id,
+                SelectedHistoricalSellOrder.Asset.ToUpper(),
+                SelectedHistoricalSellOrder.Qty,
+                SelectedHistoricalSellOrder.Price,
+                SelectedHistoricalSellOrder.Date);
+        }
+        catch (Exception)
+        {
+            MessageBox.Show("Cannot update historical buy order");
+        }
     }
     #endregion
 
@@ -175,6 +252,22 @@ public partial class MainViewModel(
             Ticker = assetRecommendation.Ticker,
             Qty = assetRecommendation.Qty,
             Reason = assetRecommendation.Reason
+        });
+    }
+
+    private static IEnumerable<BuyOrder> Map(IEnumerable<AssetPurchase> buyOrders)
+    {
+        return buyOrders.Select(b => new BuyOrder
+        {
+            Id = b.Id, Asset = b.Ticker!, Date = b.Date, Qty = b.Qty, Price = b.Price
+        });
+    }
+    
+    private IEnumerable<SellOrder> Map(IEnumerable<AssetSale> sellOrders)
+    {
+        return sellOrders.Select(b => new SellOrder
+        {
+            Id = b.Id, Asset = b.Ticker!, Date = b.Date, Qty = b.Qty, Price = b.Price
         });
     }
     #endregion

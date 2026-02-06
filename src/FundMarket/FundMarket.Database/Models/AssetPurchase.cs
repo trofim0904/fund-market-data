@@ -7,11 +7,11 @@ public class AssetPurchase
     public Guid Id { get; init; }
 
     [MaxLength(10)]
-    public string? Ticker { get; init; }
+    public string? Ticker { get; set; }
 
-    public DateTime Date { get; init; }
+    public DateTime Date { get; set; }
 
-    public decimal Price { get; init; }
+    public decimal Price { get; set; }
 
-    public decimal Qty { get; init; }
+    public decimal Qty { get; set; }
 }

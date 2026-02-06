@@ -5,6 +5,9 @@ namespace FundMarket.Desktop.Models;
 public partial class SellOrder : ObservableObject
 {
     [ObservableProperty]
+    private Guid _id;
+
+    [ObservableProperty]
     private string _asset = string.Empty;
 
     [ObservableProperty]

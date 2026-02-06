@@ -28,10 +28,23 @@ public interface IStockService
 
     Task BuyAssetAsync(string name, decimal buyOrderQty, decimal buyOrderPrice, DateTime buyOrderDate);
 
+    Task DeleteBuyAssetOrder(Guid id);
+
+    Task UpdateBuyAssetOrder(Guid id, string name, decimal qty, decimal price, DateTime date);
+
+    Task<IEnumerable<AssetPurchase>> GetAllBuyOrders();
+
     Task SellAssetAsync(string name, decimal sellOrderQty, decimal sellOrderPrice, DateTime sellOrderDate);
+
+    Task DeleteSellAssetOrder(Guid id);
+
+    Task UpdateSellAssetOrder(Guid id, string name, decimal qty, decimal price, DateTime date);
+
+    Task<IEnumerable<AssetSale>> GetAllSellOrders();
 
     /// <summary>
     /// Gets all saved ticker symbols from the database.
     /// </summary>
     Task<IEnumerable<Ticker>> GetAllTickersAsync();
+
 }
