@@ -78,6 +78,29 @@ public class StockDataService(IUnitOfWork unitOfWork, IAssetReader reader) : ISt
         }
     }
 
+    public async Task DeleteBuyAssetOrder(Guid id)
+    {
+        var order = unitOfWork.PurchaseRepository.Get(p => p.Id == id).First();
+        unitOfWork.PurchaseRepository.Delete(order);
+        await unitOfWork.SaveChangesAsync();
+    }
+
+    public async Task UpdateBuyAssetOrder(Guid id, string name, decimal qty, decimal price, DateTime date)
+    {
+        var order = unitOfWork.PurchaseRepository.Get(p => p.Id == id).First();
+        order.Ticker = name;
+        order.Date = date;
+        order.Price = price;
+        order.Qty = qty;
+        unitOfWork.PurchaseRepository.Update(order);
+        await unitOfWork.SaveChangesAsync();
+    }
+
+    public Task<IEnumerable<AssetPurchase>> GetAllBuyOrders()
+    {
+        return Task.FromResult(unitOfWork.PurchaseRepository.Get());
+    }
+
     public async Task SellAssetAsync(string name, decimal sellOrderQty, decimal sellOrderPrice, DateTime sellOrderDate)
     {
         if (unitOfWork.TickerRepository.Get(t => t.Name == name).Any())
@@ -89,6 +112,29 @@ public class StockDataService(IUnitOfWork unitOfWork, IAssetReader reader) : ISt
         {
             throw new Exception("Ticker not found.");
         }
+    }
+
+    public async Task DeleteSellAssetOrder(Guid id) 
+    {
+        var order = unitOfWork.SaleRepository.Get(p => p.Id == id).First();
+        unitOfWork.SaleRepository.Delete(order);
+        await unitOfWork.SaveChangesAsync();
+    }
+
+    public async Task UpdateSellAssetOrder(Guid id, string name, decimal qty, decimal price, DateTime date)
+    {
+        var order = unitOfWork.SaleRepository.Get(p => p.Id == id).First();
+        order.Ticker = name;
+        order.Date = date;
+        order.Price = price;
+        order.Qty = qty;
+        unitOfWork.SaleRepository.Update(order);
+        await unitOfWork.SaveChangesAsync();
+    }
+
+    public Task<IEnumerable<AssetSale>> GetAllSellOrders()
+    {
+        return Task.FromResult(unitOfWork.SaleRepository.Get());
     }
 
     public Task<IEnumerable<Ticker>> GetAllTickersAsync()
