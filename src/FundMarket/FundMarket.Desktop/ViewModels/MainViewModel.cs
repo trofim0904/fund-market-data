@@ -6,6 +6,7 @@ using FundMarket.Core;
 using FundMarket.Core.Models;
 using FundMarket.Database.Models;
 using FundMarket.Desktop.Models;
+using Microsoft.Extensions.Logging;
 using Ticker = FundMarket.Desktop.Models.Ticker;
 using EFTicker = FundMarket.Database.Models.Ticker;
 
@@ -13,7 +14,8 @@ namespace FundMarket.Desktop.ViewModels;
 
 public partial class MainViewModel(
     IStockService stockService,
-    IStockDataRecommendationService recommendationService) : ObservableObject
+    IStockDataRecommendationService recommendationService,
+    ILogger<MainViewModel> logger) : ObservableObject
 {
     #region Initialize Async
     public async Task InitializeAsync()
@@ -40,42 +42,71 @@ public partial class MainViewModel(
     [RelayCommand]
     private async Task AddTickerAsync()
     {
-        if (string.IsNullOrWhiteSpace(NewTicker))
+        try
         {
-            return;
+            if (string.IsNullOrWhiteSpace(NewTicker))
+            {
+                return;
+            }
+            await stockService.AddTickerAsync(NewTicker);
+            Tickers.Add(new Ticker(NewTicker.ToUpper()));
+            NewTicker = string.Empty;
         }
-        await stockService.AddTickerAsync(NewTicker);
-        Tickers.Add(new Ticker(NewTicker.ToUpper()));
-        NewTicker = string.Empty;
+        catch (Exception e)
+        {
+            HandleError(e);
+        }
     }
 
     [RelayCommand]
     private async Task DeleteTickerAsync()
     {
-        if (SelectedTicker == null)
+        try
         {
-            return;
+            if (SelectedTicker == null)
+            {
+                return;
+            }
+            await stockService.DeleteTickerAsync(SelectedTicker.Name);
+            Tickers.Remove(SelectedTicker);
         }
-        await stockService.DeleteTickerAsync(SelectedTicker.Name);
-        Tickers.Remove(SelectedTicker);
+        catch (Exception e)
+        {
+            HandleError(e);
+        }
     }
 
     [RelayCommand]
     private async Task SaveTickerAsync()
     {
-        if (SelectedTicker == null)
+        try
         {
-            return;
+            if (SelectedTicker == null)
+            {
+                return;
+            }
+            await stockService.UpdateTickerAsync(SelectedTicker.Name,
+                SelectedTicker.ExpectedPercent, SelectedTicker.IsIgnored);
         }
-        await stockService.UpdateTickerAsync(SelectedTicker.Name, SelectedTicker.ExpectedPercent, SelectedTicker.IsIgnored);
+        catch (Exception e)
+        {
+            HandleError(e);
+        }
     }
 
     [RelayCommand]
     private async Task SaveAllTickersAsync()
     {
-        foreach (var ticker in Tickers)
+        try
         {
-            await stockService.UpdateTickerAsync(ticker.Name, ticker.ExpectedPercent, ticker.IsIgnored);
+            foreach (var ticker in Tickers)
+            {
+                await stockService.UpdateTickerAsync(ticker.Name, ticker.ExpectedPercent, ticker.IsIgnored);
+            }
+        }
+        catch (Exception e)
+        {
+            HandleError(e);
         }
     }
     #endregion
@@ -96,7 +127,7 @@ public partial class MainViewModel(
         }
         catch (Exception e)
         {
-            MessageBox.Show(e.Message);
+            HandleError(e);
         }
     }
     #endregion
@@ -118,7 +149,7 @@ public partial class MainViewModel(
         }
         catch (Exception e)
         {
-            MessageBox.Show(e.Message);
+            HandleError(e);
         }
     }
     #endregion
@@ -136,12 +167,19 @@ public partial class MainViewModel(
     [RelayCommand]
     private async Task BuyAssetAsync()
     {
-        await stockService.BuyAssetAsync(BuyOrder.Asset.ToUpper(), BuyOrder.Qty, BuyOrder.Price, BuyOrder.Date);
-        BuyOrders.Insert(0, BuyOrder);
-        BuyOrder = new BuyOrder
+        try
         {
-            Status = "Completed"
-        };
+            await stockService.BuyAssetAsync(BuyOrder.Asset.ToUpper(), BuyOrder.Qty, BuyOrder.Price, BuyOrder.Date);
+            BuyOrders.Insert(0, BuyOrder);
+            BuyOrder = new BuyOrder
+            {
+                Status = "Completed"
+            };
+        }
+        catch (Exception e)
+        {
+            HandleError(e);
+        }
     }
 
     [RelayCommand]
@@ -152,9 +190,9 @@ public partial class MainViewModel(
             await stockService.DeleteBuyAssetOrder(SelectedHistoricalBuyOrder.Id);
             BuyOrders.Remove(SelectedHistoricalBuyOrder);
         }
-        catch (Exception)
+        catch (Exception e)
         {
-            MessageBox.Show("Cannot delete historical buy order");
+            HandleError(e);
         }
 
     }
@@ -171,9 +209,9 @@ public partial class MainViewModel(
                 SelectedHistoricalBuyOrder.Price,
                 SelectedHistoricalBuyOrder.Date);
         }
-        catch (Exception)
+        catch (Exception e)
         {
-            MessageBox.Show("Cannot update historical buy order");
+            HandleError(e);
         }
     }
     #endregion
@@ -191,12 +229,19 @@ public partial class MainViewModel(
     [RelayCommand]
     private async Task SellAssetAsync()
     {
-        await stockService.SellAssetAsync(SellOrder.Asset.ToUpper(), SellOrder.Qty, SellOrder.Price, SellOrder.Date);
-        SellOrders.Insert(0, SellOrder);
-        SellOrder = new SellOrder
+        try
         {
-            Status = "Completed"
-        };
+            await stockService.SellAssetAsync(SellOrder.Asset.ToUpper(), SellOrder.Qty, SellOrder.Price, SellOrder.Date);
+            SellOrders.Insert(0, SellOrder);
+            SellOrder = new SellOrder
+            {
+                Status = "Completed"
+            };
+        }
+        catch (Exception e)
+        {
+            HandleError(e);
+        }
     }
     
     [RelayCommand]
@@ -207,9 +252,9 @@ public partial class MainViewModel(
             await stockService.DeleteSellAssetOrder(SelectedHistoricalSellOrder.Id);
             SellOrders.Remove(SelectedHistoricalSellOrder);
         }
-        catch (Exception)
+        catch (Exception e)
         {
-            MessageBox.Show("Cannot delete historical buy order");
+            HandleError(e);
         }
 
     }
@@ -226,9 +271,9 @@ public partial class MainViewModel(
                 SelectedHistoricalSellOrder.Price,
                 SelectedHistoricalSellOrder.Date);
         }
-        catch (Exception)
+        catch (Exception e)
         {
-            MessageBox.Show("Cannot update historical buy order");
+            HandleError(e);
         }
     }
     #endregion
@@ -269,6 +314,15 @@ public partial class MainViewModel(
         {
             Id = b.Id, Asset = b.Ticker!, Date = b.Date, Qty = b.Qty, Price = b.Price
         });
+    }
+    
+    private void HandleError(Exception ex)
+    {
+        const string? errorOccured = "An error occured.";
+        logger.LogError(ex, errorOccured);
+        MessageBox.Show(
+            "Something went wrong while processing the request.",
+            "Application Error", MessageBoxButton.OK, MessageBoxImage.Error);
     }
     #endregion
 }
