@@ -6,6 +6,7 @@ using FundMarket.Desktop.Views;
 using FundMarket.Reader.Logic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace FundMarket.Desktop;
 
@@ -25,6 +26,14 @@ public partial class App
         services.AddScoped<IStockService, StockDataService>();
         services.AddScoped<IStockDataRecommendationService, StockDataRecommendationService>();
         services.AddSingleton<IAssetReader>(_ => new FinnhubStockReader(Environment.GetEnvironmentVariable("FinnhubStockApiKey")));
+        // Logger setup
+        services.AddLogging(builder =>
+        {
+            builder.ClearProviders();
+            builder.AddConsole();
+            builder.AddFile("log");
+            builder.SetMinimumLevel(LogLevel.Information);
+        });
         // Register ViewModels + Views
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<MainWindow>();
