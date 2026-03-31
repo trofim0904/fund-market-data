@@ -1,0 +1,62 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    
+    <!-- Base Colors -->
+    <Color x:Key="Color.Background">#050404</Color>
+    <Color x:Key="Color.Surface">#2E1C2B</Color>
+    <Color x:Key="Color.SurfaceLight">#4A1942</Color>
+    <Color x:Key="Color.Border">#3D1538</Color>
+    <Color x:Key="Color.Primary">#893168</Color>
+    <Color x:Key="Color.PrimaryHover">#A53D7D</Color>
+    <Color x:Key="Color.Text">#EAEAEA</Color>
+    <Color x:Key="Color.TextSecondary">#9B8A97</Color>
+    <Color x:Key="Color.TextDisabled">#5A4855</Color>
+
+    <!-- Financial Status Colors -->
+    <Color x:Key="Color.Success">#4CAF50</Color>
+    <Color x:Key="Color.SuccessHover">#66BB6A</Color>
+    <Color x:Key="Color.Error">#F44336</Color>
+    <Color x:Key="Color.ErrorHover">#EF5350</Color>
+    <Color x:Key="Color.Warning">#FF9800</Color>
+    <Color x:Key="Color.WarningHover">#FFB74D</Color>
+
+    <!-- Accent Colors for Charts/Data -->
+    <Color x:Key="Color.Accent1">#9C27B0</Color>
+    <Color x:Key="Color.Accent2">#00BCD4</Color>
+    <Color x:Key="Color.Accent3">#FFEB3B</Color>
+    <Color x:Key="Color.Accent4">#FF5722</Color>
+
+    <!-- Neutral Colors -->
+    <Color x:Key="Color.Divider">#3D1538</Color>
+    <Color x:Key="Color.Overlay">#80050404</Color>
+
+    <!-- Brushes -->
+    <SolidColorBrush x:Key="Brush.Background" Color="{StaticResource Color.Background}" />
+    <SolidColorBrush x:Key="Brush.Surface" Color="{StaticResource Color.Surface}" />
+    <SolidColorBrush x:Key="Brush.SurfaceLight" Color="{StaticResource Color.SurfaceLight}" />
+    <SolidColorBrush x:Key="Brush.Border" Color="{StaticResource Color.Border}" />
+    <SolidColorBrush x:Key="Brush.Primary" Color="{StaticResource Color.Primary}" />
+    <SolidColorBrush x:Key="Brush.PrimaryHover" Color="{StaticResource Color.PrimaryHover}" />
+    <SolidColorBrush x:Key="Brush.Text" Color="{StaticResource Color.Text}" />
+    <SolidColorBrush x:Key="Brush.TextSecondary" Color="{StaticResource Color.TextSecondary}" />
+    <SolidColorBrush x:Key="Brush.TextDisabled" Color="{StaticResource Color.TextDisabled}" />
+
+    <!-- Financial Status Brushes -->
+    <SolidColorBrush x:Key="Brush.Success" Color="{StaticResource Color.Success}" />
+    <SolidColorBrush x:Key="Brush.SuccessHover" Color="{StaticResource Color.SuccessHover}" />
+    <SolidColorBrush x:Key="Brush.Error" Color="{StaticResource Color.Error}" />
+    <SolidColorBrush x:Key="Brush.ErrorHover" Color="{StaticResource Color.ErrorHover}" />
+    <SolidColorBrush x:Key="Brush.Warning" Color="{StaticResource Color.Warning}" />
+    <SolidColorBrush x:Key="Brush.WarningHover" Color="{StaticResource Color.WarningHover}" />
+
+    <!-- Accent Brushes -->
+    <SolidColorBrush x:Key="Brush.Accent1" Color="{StaticResource Color.Accent1}" />
+    <SolidColorBrush x:Key="Brush.Accent2" Color="{StaticResource Color.Accent2}" />
+    <SolidColorBrush x:Key="Brush.Accent3" Color="{StaticResource Color.Accent3}" />
+    <SolidColorBrush x:Key="Brush.Accent4" Color="{StaticResource Color.Accent4}" />
+
+    <!-- Neutral Brushes -->
+    <SolidColorBrush x:Key="Brush.Divider" Color="{StaticResource Color.Divider}" />
+    <SolidColorBrush x:Key="Brush.Overlay" Color="{StaticResource Color.Overlay}" />
+
+</ResourceDictionary>
