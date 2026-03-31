@@ -5,45 +5,43 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         Title="FundMarket Dashboard"
         Height="600" Width="900"
-        mc:Ignorable="d">
-    <Grid Margin="12">
-        <!-- 🔹 Resources -->
-        <Grid.Resources>
-        </Grid.Resources>
+        mc:Ignorable="d"
+        Background="{StaticResource Brush.Background}">
+    
+    <Grid Margin="16">
         <TabControl>
             <TabItem Header="Tickers">
-                <Grid Margin="10">
+                <Grid Margin="16">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-                    <!-- 🔹 Top bar -->
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,10">
+                    <!--  Top bar -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,16">
                         <TextBox Width="200" 
-                                 Margin="0,6,10,5"
-                                 Padding="5,5,5,5"
-                                 Text="{Binding NewTicker, UpdateSourceTrigger=PropertyChanged}"
-                                 />
+                                 Margin="0,0,8,0"
+                                 Text="{Binding NewTicker, UpdateSourceTrigger=PropertyChanged}"/>
                         <Button Content="Add Ticker"
-                                Command="{Binding AddTickerCommand}"/>
+                                Command="{Binding AddTickerCommand}"
+                                Margin="0,0,8,0"/>
                         <Button Content="Save Selected"
-                                Command="{Binding SaveTickerCommand}"/>
+                                Command="{Binding SaveTickerCommand}"
+                                Margin="0,0,8,0"/>
                         <Button Content="Save All"
-                                Command="{Binding SaveAllTickersCommand}"/>
+                                Command="{Binding SaveAllTickersCommand}"
+                                Margin="0,0,8,0"/>
                         <Button Content="Delete Selected"
+                                Background="{StaticResource Brush.Error}"
                                 Command="{Binding DeleteTickerCommand}"/>
                     </StackPanel>
-                    <!-- 🔹 Data grid -->
-                    <Border Grid.Row="1" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Padding="5">
+                    <!--  Data grid -->
+                    <Border Grid.Row="1" 
+                            BorderBrush="{StaticResource Brush.Border}" 
+                            Background="{StaticResource Brush.Surface}">
                         <DataGrid ItemsSource="{Binding Tickers}"
                                   SelectedItem="{Binding SelectedTicker}"
                                   AutoGenerateColumns="False"
-                                  AlternatingRowBackground="#F7F9FC"
-                                  RowBackground="White"
-                                  GridLinesVisibility="None"
-                                  HeadersVisibility="Column"
-                                  BorderThickness="0"
                                   CanUserAddRows="False"
                                   CanUserDeleteRows="False">
 
@@ -53,12 +51,12 @@
                                 <!-- Name -->
                                 <DataGridTextColumn Header="Name"
                                                     Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
-                                                    Width="*" />
+                                                    Width="Auto" />
 
                                 <!-- Is Ignored -->
                                 <DataGridCheckBoxColumn Header="Is Ignored"
                                                         Binding="{Binding IsIgnored}"
-                                                        Width="*" />
+                                                        Width="Auto" />
 
                                 <!-- Expected Percent -->
                                 <DataGridTextColumn Header="Expected Percent"
@@ -74,8 +72,9 @@
             </TabItem>
 
             <TabItem Header="Purchases">
-                <Grid Margin="10">
+                <Grid Margin="16" Background="{StaticResource Brush.Background}">
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
@@ -90,40 +89,46 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     
-                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Asset"/>
-
-                    <TextBlock Grid.Row="0" Grid.Column="1" Text="Qty" />
-
-                    <TextBlock Grid.Row="0" Grid.Column="2" Text="Price" />
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="New Purchase Transaction" FontWeight="SemiBold" FontSize="16" Margin="0,0,0,12"/>
                     
-                    <TextBlock Grid.Row="0" Grid.Column="3" Text="Date"/>
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Asset" FontWeight="SemiBold" Margin="0,0,8,8"/>
 
-                    <!-- Row 1 : Inputs -->
-                    <TextBox Grid.Row="1" Grid.Column="0"
-                             Text="{Binding BuyOrder.Asset, UpdateSourceTrigger=PropertyChanged}"/>
+                    <TextBlock Grid.Row="1" Grid.Column="1" Text="Qty" FontWeight="SemiBold" Margin="0,0,8,8"/>
 
-                    <TextBox Grid.Row="1" Grid.Column="1"
-                             Text="{Binding BuyOrder.Qty, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBlock Grid.Row="1" Grid.Column="2" Text="Price" FontWeight="SemiBold" Margin="0,0,8,8"/>
 
-                    <TextBox Grid.Row="1" Grid.Column="2"
-                             Text="{Binding BuyOrder.Price, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:N2}}" />
+                    <TextBlock Grid.Row="1" Grid.Column="3" Text="Date" FontWeight="SemiBold" Margin="0,0,0,8"/>
 
-                    <DatePicker Grid.Row="1" Grid.Column="3"
-                                Text="{Binding BuyOrder.Date, UpdateSourceTrigger=PropertyChanged}"/>
-                    <Button Grid.Row="2" Grid.Column="0"
+                    <TextBox Grid.Row="2" Grid.Column="0"
+                             Text="{Binding BuyOrder.Asset, UpdateSourceTrigger=PropertyChanged}"
+                             Margin="0,0,8,8"/>
+
+                    <TextBox Grid.Row="2" Grid.Column="1"
+                             Text="{Binding BuyOrder.Qty, UpdateSourceTrigger=PropertyChanged}"
+                             Margin="0,0,8,8"/>
+
+                    <TextBox Grid.Row="2" Grid.Column="2"
+                             Text="{Binding BuyOrder.Price, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:N2}}"
+                             Margin="0,0,8,8"/>
+
+                    <DatePicker Grid.Row="2" Grid.Column="3"
+                                Text="{Binding BuyOrder.Date, UpdateSourceTrigger=PropertyChanged}"
+                                Margin="0,0,0,8"/>
+                    <Button Grid.Row="3" Grid.Column="0"
                             Content="Buy"
-                            Command="{Binding BuyAssetCommand}" />
-                    <TextBlock Grid.Row="2" Grid.Column="1"
+                            Command="{Binding BuyAssetCommand}"
+                            Margin="0,0,8,16"/>
+                    <TextBlock Grid.Row="3" Grid.Column="1"
                                Text="{Binding BuyOrder.Status}"
-                               Foreground="Green"
-                               VerticalAlignment="Center" />
+                               Foreground="{StaticResource Brush.Success}"
+                               VerticalAlignment="Center"
+                               Margin="0,0,0,16"/>
+
+                    <TextBlock Grid.Row="4" Grid.Column="0" Text="History Records" FontWeight="SemiBold" FontSize="16" Margin="0,0,0,12"/>
                     
-                    <TextBlock Grid.Row="3" Grid.Column="0" Text="History Records" />
-                    
-                    <DataGrid Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="4" ItemsSource="{Binding BuyOrders}"
+                    <DataGrid Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="4" ItemsSource="{Binding BuyOrders}"
                               SelectedItem="{Binding SelectedHistoricalBuyOrder}"
                               AutoGenerateColumns="False"
-                              HeadersVisibility="Column"
                               CanUserAddRows="False"
                               CanUserDeleteRows="False"
                               ScrollViewer.VerticalScrollBarVisibility="Auto"
@@ -144,7 +149,9 @@
                             <DataGridTemplateColumn Header="Delete">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
+                                        <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
                                         <Button Content="Delete"
+                                                Background="{StaticResource Brush.Error}"
                                                 Command="{Binding DataContext.DeleteHistoricalBuyOrderCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}"/>
                                     </DataTemplate>
@@ -153,6 +160,7 @@
                             <DataGridTemplateColumn Header="Save">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
+                                        <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
                                         <Button Content="Save"
                                                 Command="{Binding DataContext.SaveHistoricalBuyOrderCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}"/>
@@ -165,8 +173,10 @@
             </TabItem>
             
             <TabItem Header="Sales">
-                <Grid Margin="10">
+                <Grid Margin="16" Background="{StaticResource Brush.Background}">
+                    
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
@@ -181,44 +191,47 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     
-                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Asset"/>
-
-                    <TextBlock Grid.Row="0" Grid.Column="1" Text="Qty" />
-
-                    <TextBlock Grid.Row="0" Grid.Column="2" Text="Price" />
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="New Sale Transaction" FontWeight="SemiBold" FontSize="16" Margin="0,0,0,12"/>
                     
-                    <TextBlock Grid.Row="0" Grid.Column="3" Text="Date"/>
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Asset" FontWeight="SemiBold" Margin="0,0,8,8"/>
 
-                    <!-- Row 1 : Inputs -->
-                    <TextBox Grid.Row="1" Grid.Column="0"
-                             Text="{Binding SellOrder.Asset, UpdateSourceTrigger=PropertyChanged}"/>
+                    <TextBlock Grid.Row="1" Grid.Column="1" Text="Qty" FontWeight="SemiBold" Margin="0,0,8,8"/>
 
-                    <TextBox Grid.Row="1" Grid.Column="1"
-                             Text="{Binding SellOrder.Qty, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBlock Grid.Row="1" Grid.Column="2" Text="Price" FontWeight="SemiBold" Margin="0,0,8,8"/>
 
-                    <TextBox Grid.Row="1" Grid.Column="2"
-                             Text="{Binding SellOrder.Price, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:N2}}" />
+                    <TextBlock Grid.Row="1" Grid.Column="3" Text="Date" FontWeight="SemiBold" Margin="0,0,0,8"/>
 
-                    <DatePicker Grid.Row="1" Grid.Column="3"
-                                Text="{Binding SellOrder.Date, UpdateSourceTrigger=PropertyChanged}"/>
-                    <Button Grid.Row="2" Grid.Column="0"
-                            Content="Buy"
-                            Command="{Binding SellAssetCommand}" />
-                    <TextBlock Grid.Row="2" Grid.Column="1"
+                    <TextBox Grid.Row="2" Grid.Column="0"
+                             Text="{Binding SellOrder.Asset, UpdateSourceTrigger=PropertyChanged}"
+                             Margin="0,0,8,8"/>
+
+                    <TextBox Grid.Row="2" Grid.Column="1"
+                             Text="{Binding SellOrder.Qty, UpdateSourceTrigger=PropertyChanged}"
+                             Margin="0,0,8,8"/>
+
+                    <TextBox Grid.Row="2" Grid.Column="2"
+                             Text="{Binding SellOrder.Price, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:N2}}"
+                             Margin="0,0,8,8"/>
+
+                    <DatePicker Grid.Row="2" Grid.Column="3"
+                                Text="{Binding SellOrder.Date, UpdateSourceTrigger=PropertyChanged}"
+                                Margin="0,0,0,8"/>
+                    <Button Grid.Row="3" Grid.Column="0"
+                            Content="Sell"
+                            Command="{Binding SellAssetCommand}"
+                            Margin="0,0,8,16"/>
+                    <TextBlock Grid.Row="3" Grid.Column="1"
                                Text="{Binding SellOrder.Status}"
-                               Foreground="Green"
-                               VerticalAlignment="Center" />
+                               Foreground="{StaticResource Brush.Success}"
+                               VerticalAlignment="Center"
+                               Margin="0,0,0,16"/>
+
+                    <TextBlock Grid.Row="4" Grid.Column="0" Text="History Records" FontWeight="SemiBold" FontSize="16" Margin="0,0,0,12"/>
                     
-                    <TextBlock Grid.Row="3" Grid.Column="0" Text="History Records" />
-                    
-                    <DataGrid Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="4" ItemsSource="{Binding SellOrders}"
+                    <DataGrid Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="4" ItemsSource="{Binding SellOrders}"
                               SelectedItem="{Binding SelectedHistoricalSellOrder}"
                               AutoGenerateColumns="False"
-                              HeadersVisibility="Column"
-                              CanUserAddRows="False"
-                              CanUserDeleteRows="False"
-                              ScrollViewer.VerticalScrollBarVisibility="Auto"
-                              ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                              CanUserAddRows="False">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Asset"
                                                 Binding="{Binding Asset, UpdateSourceTrigger=PropertyChanged}"
@@ -235,7 +248,9 @@
                             <DataGridTemplateColumn Header="Delete">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
+                                        <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
                                         <Button Content="Delete"
+                                                Background="{StaticResource Brush.Error}"
                                                 Command="{Binding DataContext.DeleteHistoricalSellOrderCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}"/>
                                     </DataTemplate>
@@ -244,6 +259,7 @@
                             <DataGridTemplateColumn Header="Save">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
+                                        <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
                                         <Button Content="Save"
                                                 Command="{Binding DataContext.SaveHistoricalSellOrderCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}"/>
@@ -256,7 +272,7 @@
             </TabItem>
             
             <TabItem Header="Totals">
-                <Grid Margin="10">
+                <Grid Margin="16">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
@@ -264,46 +280,37 @@
                     </Grid.RowDefinitions>
 
                     <!-- 🔹 Top bar -->
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,10">
-                        <TextBox Width="200" 
-                                 IsReadOnly="True"
-                                 Visibility="Hidden"
-                                 Margin="0,6,10,5"
-                                 Padding="5,5,5,5"/>
-                        <Button Margin="0,6,10,5"
-                                Padding="5,5,5,5"
-                                Content="Load Assets"
-                                Command="{Binding SeeBoughtAssetsCommand}" />
-                    </StackPanel>
+                    <Button Grid.Row="0"
+                            Content="Load Assets"
+                            HorizontalAlignment="Right"
+                            Margin="0,0,0,10"
+                            Command="{Binding SeeBoughtAssetsCommand}" />
 
                     <!-- 🔹 Data grid -->
-                    <Border Grid.Row="1" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Padding="5">
-                        <DataGrid ItemsSource="{Binding AssetSummary.Assets}"
-                                  AutoGenerateColumns="False"
-                                  IsReadOnly="True"
-                                  AlternatingRowBackground="#F7F9FC"
-                                  RowBackground="White"
-                                  GridLinesVisibility="None"
-                                  HeadersVisibility="Column"
-                                  BorderThickness="0"
-                                  CanUserAddRows="False"
-                                  SelectionMode="Single"
-                                  SelectionUnit="FullRow">
+                    <DataGrid Grid.Row="1"
+                              ItemsSource="{Binding AssetSummary.Assets}"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              GridLinesVisibility="None"
+                              HeadersVisibility="Column"
+                              BorderThickness="0"
+                              CanUserAddRows="False"
+                              SelectionMode="Single"
+                              SelectionUnit="FullRow">
 
-                            <!-- Columns (excluding ExpectedPercent & Tier) -->
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="Ticker" Binding="{Binding Ticker}" Width="Auto" />
-                                <DataGridTextColumn Header="Qty" Binding="{Binding Qty}" Width="Auto" />
-                                <DataGridTextColumn Header="Avg Price" Binding="{Binding AvgPrice, StringFormat={}{0:N2}}" Width="*" />
-                                <DataGridTextColumn Header="Purchase Total" Binding="{Binding PurchaseTotal, StringFormat={}{0:N2}}" Width="*" />
-                                <DataGridTextColumn Header="Current Price" Binding="{Binding CurrentPrice, StringFormat={}{0:N2}}" Width="*" />
-                                <DataGridTextColumn Header="Current Value" Binding="{Binding CurrentValue, StringFormat={}{0:N2}}" Width="*" />
-                                <DataGridTextColumn Header="Difference" Binding="{Binding Difference, StringFormat={}{0:N2}}" Width="*" />
-                                <DataGridTextColumn Header="Percent" Binding="{Binding Percent, StringFormat={}{0:N2}}" Width="*" />
-                                <DataGridTextColumn Header="Expected Percent" Binding="{Binding ExpectedPercent, StringFormat={}{0:N2}}" Width="*" />
-                            </DataGrid.Columns>
-                        </DataGrid>
-                    </Border>
+                        <!-- Columns (excluding ExpectedPercent & Tier) -->
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Ticker" Binding="{Binding Ticker}" Width="Auto" />
+                            <DataGridTextColumn Header="Qty" Binding="{Binding Qty}" Width="Auto" />
+                            <DataGridTextColumn Header="Avg Price" Binding="{Binding AvgPrice, StringFormat={}{0:N2}}" Width="*" />
+                            <DataGridTextColumn Header="Purchase Total" Binding="{Binding PurchaseTotal, StringFormat={}{0:N2}}" Width="*" />
+                            <DataGridTextColumn Header="Current Price" Binding="{Binding CurrentPrice, StringFormat={}{0:N2}}" Width="*" />
+                            <DataGridTextColumn Header="Current Value" Binding="{Binding CurrentValue, StringFormat={}{0:N2}}" Width="*" />
+                            <DataGridTextColumn Header="Difference" Binding="{Binding Difference, StringFormat={}{0:N2}}" Width="*" />
+                            <DataGridTextColumn Header="Percent" Binding="{Binding Percent, StringFormat={}{0:N2}}" Width="*" />
+                            <DataGridTextColumn Header="Expected Percent" Binding="{Binding ExpectedPercent, StringFormat={}{0:N2}}" Width="*" />
+                        </DataGrid.Columns>
+                    </DataGrid>
 
                     <!-- 🔹 Summary info -->
                     <StackPanel Grid.Row="2"
@@ -337,26 +344,31 @@
 
 
             <TabItem Header="Recommendations">
-                <Grid Margin="10">
+                <Grid Margin="16">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,10">
-                        <TextBox Width="200" 
-                                 Margin="0,6,10,5"
-                                 Padding="5,5,5,5"
-                                 Text="{Binding AmountToInvest, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:N2}}"/>
-                        <Button Content="Recommend Assets"
-                                Command="{Binding RecommendAssetsCommand}" />
-                    </StackPanel>
-                    <Border Grid.Row="1" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Padding="5">
+                    
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBox Grid.Row="0" Grid.Column="1"
+                             Margin="0,0,8,0"
+                             Text="{Binding AmountToInvest, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:N2}}"/>
+                    <Button Grid.Row="0" Grid.Column="2"
+                            Content="Recommend Assets"
+                            Margin="0,0,0,0"
+                            Command="{Binding RecommendAssetsCommand}" />
+
+                    <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,16,0,0">
                         <DataGrid ItemsSource="{Binding Recommendations}"
                                   AutoGenerateColumns="False"
                                   IsReadOnly="True"
-                                  AlternatingRowBackground="#F7F9FC"
-                                  RowBackground="White"
                                   GridLinesVisibility="None"
                                   HeadersVisibility="Column"
                                   BorderThickness="0"
