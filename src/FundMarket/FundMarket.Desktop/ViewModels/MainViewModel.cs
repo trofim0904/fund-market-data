@@ -20,8 +20,9 @@ public partial class MainViewModel(
     #region Initialize Async
     public async Task InitializeAsync()
     {
-        var tickers = await stockService.GetAllTickersAsync();
+        var tickers = (await stockService.GetAllTickersAsync()).ToList();
         Tickers = new ObservableCollection<Ticker>(Map(tickers));
+        ActiveTickers = new ObservableCollection<Ticker>(Map(tickers.Where(t => t.IsIgnored != true)));
         var buyOrders = await stockService.GetAllBuyOrders();
         BuyOrders = new ObservableCollection<BuyOrder>(Map(buyOrders.OrderByDescending(o => o.Date)));
         var sellOrders = await stockService.GetAllSellOrders();
@@ -35,9 +36,26 @@ public partial class MainViewModel(
 
     [ObservableProperty] 
     private ObservableCollection<Ticker> _tickers = [];
+    
+    [ObservableProperty] 
+    private ObservableCollection<Ticker> _activeTickers = [];
 
     [ObservableProperty] 
     private Ticker? _selectedTicker;
+
+    [RelayCommand]
+    private async Task ReloadTickersAsync()
+    {
+        try
+        {
+            var tickers = (await stockService.GetAllTickersAsync()).ToList();
+            ActiveTickers = new ObservableCollection<Ticker>(Map(tickers.Where(t => t.IsIgnored != true)));
+        }
+        catch (Exception e)
+        {
+            HandleError(e);
+        }
+    }
 
     [RelayCommand]
     private async Task AddTickerAsync()
@@ -173,7 +191,8 @@ public partial class MainViewModel(
             BuyOrders.Insert(0, BuyOrder);
             BuyOrder = new BuyOrder
             {
-                Status = "Completed"
+                Status = "Completed",
+                Date = DateTime.Now
             };
         }
         catch (Exception e)
@@ -235,7 +254,8 @@ public partial class MainViewModel(
             SellOrders.Insert(0, SellOrder);
             SellOrder = new SellOrder
             {
-                Status = "Completed"
+                Status = "Completed",
+                Date = DateTime.Now
             };
         }
         catch (Exception e)
