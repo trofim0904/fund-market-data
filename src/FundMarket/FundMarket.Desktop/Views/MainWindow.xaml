@@ -92,16 +92,28 @@
                     <TextBlock Grid.Row="0" Grid.Column="0" Text="New Purchase Transaction" FontWeight="SemiBold" FontSize="16" Margin="0,0,0,12"/>
                     
                     <TextBlock Grid.Row="1" Grid.Column="0" Text="Asset" FontWeight="SemiBold" Margin="0,0,8,8"/>
-
                     <TextBlock Grid.Row="1" Grid.Column="1" Text="Qty" FontWeight="SemiBold" Margin="0,0,8,8"/>
-
                     <TextBlock Grid.Row="1" Grid.Column="2" Text="Price" FontWeight="SemiBold" Margin="0,0,8,8"/>
-
                     <TextBlock Grid.Row="1" Grid.Column="3" Text="Date" FontWeight="SemiBold" Margin="0,0,0,8"/>
 
-                    <TextBox Grid.Row="2" Grid.Column="0"
-                             Text="{Binding BuyOrder.Asset, UpdateSourceTrigger=PropertyChanged}"
-                             Margin="0,0,8,8"/>
+                    <Grid Grid.Row="2" Grid.Column="0" Margin="0,0,8,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ComboBox Grid.Column="0"
+                                  ItemsSource="{Binding ActiveTickers}"
+                                  DisplayMemberPath="Name"
+                                  SelectedValuePath="Name"
+                                  SelectedValue="{Binding BuyOrder.Asset, UpdateSourceTrigger=PropertyChanged}"
+                                  Margin="0,0,4,0"/>
+                        <Button Grid.Column="1"
+                                Content="↻" 
+                                Command="{Binding ReloadTickersCommand}"
+                                Padding="4,2" 
+                                Width = "50"
+                                ToolTip="Reload Tickers"/>
+                    </Grid>
 
                     <TextBox Grid.Row="2" Grid.Column="1"
                              Text="{Binding BuyOrder.Qty, UpdateSourceTrigger=PropertyChanged}"
@@ -194,16 +206,28 @@
                     <TextBlock Grid.Row="0" Grid.Column="0" Text="New Sale Transaction" FontWeight="SemiBold" FontSize="16" Margin="0,0,0,12"/>
                     
                     <TextBlock Grid.Row="1" Grid.Column="0" Text="Asset" FontWeight="SemiBold" Margin="0,0,8,8"/>
-
                     <TextBlock Grid.Row="1" Grid.Column="1" Text="Qty" FontWeight="SemiBold" Margin="0,0,8,8"/>
-
                     <TextBlock Grid.Row="1" Grid.Column="2" Text="Price" FontWeight="SemiBold" Margin="0,0,8,8"/>
-
                     <TextBlock Grid.Row="1" Grid.Column="3" Text="Date" FontWeight="SemiBold" Margin="0,0,0,8"/>
 
-                    <TextBox Grid.Row="2" Grid.Column="0"
-                             Text="{Binding SellOrder.Asset, UpdateSourceTrigger=PropertyChanged}"
-                             Margin="0,0,8,8"/>
+                    <Grid Grid.Row="2" Grid.Column="0" Margin="0,0,8,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ComboBox Grid.Column="0"
+                                  ItemsSource="{Binding ActiveTickers}"
+                                  DisplayMemberPath="Name"
+                                  SelectedValuePath="Name"
+                                  SelectedValue="{Binding SellOrder.Asset, UpdateSourceTrigger=PropertyChanged}"
+                                  Margin="0,0,4,0"/>
+                        <Button Grid.Column="1"
+                                Content="↻" 
+                                Command="{Binding ReloadTickersCommand}"
+                                Padding="4,2" 
+                                Width = "50"
+                                ToolTip="Reload Tickers"/>
+                    </Grid>
 
                     <TextBox Grid.Row="2" Grid.Column="1"
                              Text="{Binding SellOrder.Qty, UpdateSourceTrigger=PropertyChanged}"
