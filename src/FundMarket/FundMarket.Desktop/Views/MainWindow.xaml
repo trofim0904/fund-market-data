@@ -14,6 +14,7 @@
                 <Grid Margin="16">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
@@ -35,8 +36,27 @@
                                 Background="{StaticResource Brush.Error}"
                                 Command="{Binding DeleteTickerCommand}"/>
                     </StackPanel>
+                    <StackPanel Grid.Row="1"
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Left"
+                                Margin="0,0,0,12">
+                        <Button Content="↻" 
+                                Command="{Binding ReloadTickersCommand}"
+                                Padding="4,2"
+                                Width="32"
+                                Height="32"
+                                Margin="0,0,10,0"
+                                ToolTip="Reload Tickers"/>
+                        <Button Content="CSV"
+                                Command="{Binding ExportTickersAsCsvCommand}"
+                                Padding="4,2"
+                                Width="32"
+                                Height="32"
+                                Margin="0,0,10,0"
+                                ToolTip="Export tickers as CSV"/>
+                    </StackPanel>
                     <!--  Data grid -->
-                    <Border Grid.Row="1" 
+                    <Border Grid.Row="2" 
                             BorderBrush="{StaticResource Brush.Border}" 
                             Background="{StaticResource Brush.Surface}">
                         <DataGrid ItemsSource="{Binding Tickers}"
@@ -63,11 +83,34 @@
                                                     Binding="{Binding ExpectedPercent,
                                                     UpdateSourceTrigger=PropertyChanged,
                                                     StringFormat={}{0:N2}}"
+                                                    Width="Auto" />
+
+                                <!-- Current Price -->
+                                <DataGridTextColumn Header="Current Price"
+                                                    IsReadOnly="True"
+                                                    Binding="{Binding CurrentPrice, StringFormat={}{0:N2}}"
                                                     Width="*" />
 
                             </DataGrid.Columns>
                         </DataGrid>
                     </Border>
+                    <StackPanel Grid.Row="3"
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Left"
+                                Margin="0,10,0,0">
+                        <StackPanel Margin="0,0,10,0">
+                            <TextBlock Text="Total Percent" FontWeight="Bold" Margin="0,0,0,2"/>
+                            <TextBox Width="150" IsReadOnly="True"
+                                     HorizontalContentAlignment="Right"
+                                     Text="{Binding TotalNotIgnoredPercent, StringFormat={}{0:N2}}"/>
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock Text="Total Tickers" FontWeight="Bold" Margin="0,0,0,2"/>
+                            <TextBox Width="150" IsReadOnly="True"
+                                     HorizontalContentAlignment="Right"
+                                     Text="{Binding TotalNotIgnoredTickers}"/>
+                        </StackPanel>
+                    </StackPanel>
                 </Grid>
             </TabItem>
 

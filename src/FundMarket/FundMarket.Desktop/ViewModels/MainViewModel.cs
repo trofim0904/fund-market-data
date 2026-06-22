@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using System.IO;
+using System.Text;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -7,6 +9,7 @@ using FundMarket.Core.Models;
 using FundMarket.Database.Models;
 using FundMarket.Desktop.Models;
 using Microsoft.Extensions.Logging;
+using Microsoft.Win32;
 using Ticker = FundMarket.Desktop.Models.Ticker;
 using EFTicker = FundMarket.Database.Models.Ticker;
 
@@ -15,14 +18,13 @@ namespace FundMarket.Desktop.ViewModels;
 public partial class MainViewModel(
     IStockService stockService,
     IStockDataRecommendationService recommendationService,
+    TickerCsvExporter tickerCsvExporter,
     ILogger<MainViewModel> logger) : ObservableObject
 {
     #region Initialize Async
     public async Task InitializeAsync()
     {
-        var tickers = (await stockService.GetAllTickersAsync()).ToList();
-        Tickers = new ObservableCollection<Ticker>(Map(tickers));
-        ActiveTickers = new ObservableCollection<Ticker>(Map(tickers.Where(t => t.IsIgnored != true)));
+        await RefreshTickerDataAsync();
         var buyOrders = await stockService.GetAllBuyOrders();
         BuyOrders = new ObservableCollection<BuyOrder>(Map(buyOrders.OrderByDescending(o => o.Date)));
         var sellOrders = await stockService.GetAllSellOrders();
@@ -40,6 +42,12 @@ public partial class MainViewModel(
     [ObservableProperty] 
     private ObservableCollection<Ticker> _activeTickers = [];
 
+    [ObservableProperty]
+    private decimal _totalNotIgnoredPercent;
+
+    [ObservableProperty]
+    private int _totalNotIgnoredTickers;
+
     [ObservableProperty] 
     private Ticker? _selectedTicker;
 
@@ -48,8 +56,36 @@ public partial class MainViewModel(
     {
         try
         {
-            var tickers = (await stockService.GetAllTickersAsync()).ToList();
-            ActiveTickers = new ObservableCollection<Ticker>(Map(tickers.Where(t => t.IsIgnored != true)));
+            await RefreshTickerDataAsync();
+        }
+        catch (Exception e)
+        {
+            HandleError(e);
+        }
+    }
+
+    [RelayCommand]
+    private async Task ExportTickersAsCsvAsync()
+    {
+        try
+        {
+            var dialog = new SaveFileDialog
+            {
+                Filter = "CSV files (*.csv)|*.csv",
+                FileName = $"tickers-{DateTime.Now:yyyyMMdd-HHmmss}.csv"
+            };
+            if (dialog.ShowDialog() != true)
+            {
+                return;
+            }
+            var csv = tickerCsvExporter.CreateCsv(Tickers.Select(ticker => new TickerExportItem
+            {
+                Name = ticker.Name,
+                IsIgnored = ticker.IsIgnored,
+                ExpectedPercent = ticker.ExpectedPercent,
+                CurrentPrice = ticker.CurrentPrice
+            }));
+            await File.WriteAllTextAsync(dialog.FileName, csv, Encoding.UTF8);
         }
         catch (Exception e)
         {
@@ -67,7 +103,7 @@ public partial class MainViewModel(
                 return;
             }
             await stockService.AddTickerAsync(NewTicker);
-            Tickers.Add(new Ticker(NewTicker.ToUpper()));
+            await RefreshTickerDataAsync();
             NewTicker = string.Empty;
         }
         catch (Exception e)
@@ -86,7 +122,7 @@ public partial class MainViewModel(
                 return;
             }
             await stockService.DeleteTickerAsync(SelectedTicker.Name);
-            Tickers.Remove(SelectedTicker);
+            await RefreshTickerDataAsync();
         }
         catch (Exception e)
         {
@@ -121,6 +157,7 @@ public partial class MainViewModel(
             {
                 await stockService.UpdateTickerAsync(ticker.Name, ticker.ExpectedPercent, ticker.IsIgnored);
             }
+            await RefreshTickerDataAsync();
         }
         catch (Exception e)
         {
@@ -339,6 +376,28 @@ public partial class MainViewModel(
             ExpectedPercent = ticker.ExpectedPercent ?? decimal.Zero,
             IsIgnored = ticker.IsIgnored == true
         });
+    }
+
+    private async Task RefreshTickerDataAsync()
+    {
+        var tickers = (await stockService.GetAllTickersAsync()).ToList();
+        var mappedTickers = new List<Ticker>();
+        foreach (var ticker in tickers)
+        {
+            mappedTickers.Add(new Ticker
+            {
+                Name = ticker.Name,
+                ExpectedPercent = ticker.ExpectedPercent ?? decimal.Zero,
+                IsIgnored = ticker.IsIgnored == true,
+                CurrentPrice = ticker.IsIgnored == true 
+                    ? decimal.Zero 
+                    : await stockService.GetCurrentPriceAsync(ticker.Name)
+            });
+        }
+        Tickers = new ObservableCollection<Ticker>(mappedTickers);
+        ActiveTickers = new ObservableCollection<Ticker>(mappedTickers.Where(t => t.IsIgnored != true));
+        TotalNotIgnoredPercent = Math.Round(mappedTickers.Where(t => t.IsIgnored != true).Sum(t => t.ExpectedPercent), 2, MidpointRounding.ToEven);
+        TotalNotIgnoredTickers = mappedTickers.Count(t => t.IsIgnored != true);
     }
 
     private static IEnumerable<Recommendation> Map(IEnumerable<AssetRecommendation> recommendation)
