@@ -13,6 +13,9 @@ public partial class Ticker : ObservableObject
     [ObservableProperty]
     private decimal _expectedPercent;
 
+    [ObservableProperty]
+    private decimal _currentPrice;
+
     public Ticker() { }
 
     public Ticker(string name)

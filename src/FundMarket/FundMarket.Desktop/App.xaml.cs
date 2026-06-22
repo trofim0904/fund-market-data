@@ -25,6 +25,7 @@ public partial class App
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IStockService, StockDataService>();
         services.AddScoped<IStockDataRecommendationService, StockDataRecommendationService>();
+        services.AddSingleton<TickerCsvExporter>();
         services.AddSingleton<IAssetReader>(_ => new FinnhubStockReader(Environment.GetEnvironmentVariable("FinnhubStockApiKey")));
         // Logger setup
         services.AddLogging(builder =>
