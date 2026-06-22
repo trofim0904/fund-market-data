@@ -47,4 +47,5 @@ public interface IStockService
     /// </summary>
     Task<IEnumerable<Ticker>> GetAllTickersAsync();
 
+    Task<decimal> GetCurrentPriceAsync(string name);
 }

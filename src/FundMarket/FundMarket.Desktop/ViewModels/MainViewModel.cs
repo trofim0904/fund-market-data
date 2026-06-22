@@ -202,6 +202,23 @@ public partial class MainViewModel(
     }
 
     [RelayCommand]
+    private async Task SetBuyOrderPriceAsCurrentAsync()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(BuyOrder.Asset))
+            {
+                return;
+            }
+            BuyOrder.Price = await stockService.GetCurrentPriceAsync(BuyOrder.Asset);
+        }
+        catch (Exception e)
+        {
+            HandleError(e);
+        }
+    }
+
+    [RelayCommand]
     private async Task DeleteHistoricalBuyOrderAsync()
     {
         try 
@@ -213,7 +230,6 @@ public partial class MainViewModel(
         {
             HandleError(e);
         }
-
     }
     
     [RelayCommand]
@@ -263,6 +279,23 @@ public partial class MainViewModel(
             HandleError(e);
         }
     }
+
+    [RelayCommand]
+    private async Task SetSellOrderPriceAsCurrentAsync()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(SellOrder.Asset))
+            {
+                return;
+            }
+            SellOrder.Price = await stockService.GetCurrentPriceAsync(SellOrder.Asset);
+        }
+        catch (Exception e)
+        {
+            HandleError(e);
+        }
+    }
     
     [RelayCommand]
     private async Task DeleteHistoricalSellOrderAsync()
@@ -276,7 +309,6 @@ public partial class MainViewModel(
         {
             HandleError(e);
         }
-
     }
     
     [RelayCommand]
