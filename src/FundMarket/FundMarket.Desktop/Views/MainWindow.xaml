@@ -119,9 +119,20 @@
                              Text="{Binding BuyOrder.Qty, UpdateSourceTrigger=PropertyChanged}"
                              Margin="0,0,8,8"/>
 
-                    <TextBox Grid.Row="2" Grid.Column="2"
-                             Text="{Binding BuyOrder.Price, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:N2}}"
-                             Margin="0,0,8,8"/>
+                    <Grid Grid.Row="2" Grid.Column="2" Margin="0,0,8,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0"
+                                 Text="{Binding BuyOrder.Price, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:N2}}"
+                                 Margin="0,0,4,0"/>
+                        <Button Grid.Column="1"
+                                Content="Current"
+                                Command="{Binding SetBuyOrderPriceAsCurrentCommand}"
+                                Padding="8,2"
+                                ToolTip="Set current market price"/>
+                    </Grid>
 
                     <DatePicker Grid.Row="2" Grid.Column="3"
                                 Text="{Binding BuyOrder.Date, UpdateSourceTrigger=PropertyChanged}"
@@ -233,9 +244,20 @@
                              Text="{Binding SellOrder.Qty, UpdateSourceTrigger=PropertyChanged}"
                              Margin="0,0,8,8"/>
 
-                    <TextBox Grid.Row="2" Grid.Column="2"
-                             Text="{Binding SellOrder.Price, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:N2}}"
-                             Margin="0,0,8,8"/>
+                    <Grid Grid.Row="2" Grid.Column="2" Margin="0,0,8,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0"
+                                 Text="{Binding SellOrder.Price, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:N2}}"
+                                 Margin="0,0,4,0"/>
+                        <Button Grid.Column="1"
+                                Content="Current"
+                                Command="{Binding SetSellOrderPriceAsCurrentCommand}"
+                                Padding="8,2"
+                                ToolTip="Set current market price"/>
+                    </Grid>
 
                     <DatePicker Grid.Row="2" Grid.Column="3"
                                 Text="{Binding SellOrder.Date, UpdateSourceTrigger=PropertyChanged}"

@@ -145,6 +145,22 @@ public class StockDataService(IUnitOfWork unitOfWork, IAssetReader reader) : ISt
             .ThenBy(t => t.Name));
     }
 
+    public async Task<decimal> GetCurrentPriceAsync(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new Exception("Ticker not found.");
+        }
+        var ticker = name.Trim().ToUpper();
+        var tickerExists = unitOfWork.TickerRepository.Get(t => t.Name == ticker).Any();
+        if (!tickerExists)
+        {
+            throw new Exception("Ticker not found.");
+        }
+        var asset = await reader.GetAssetAsync(ticker);
+        return asset.CurrentPrice;
+    }
+
     public Task<AssetsSummary> GetBoughtAssetsAsync()
     {
         var tickers = unitOfWork.TickerRepository.Get(t => t.IsIgnored != true).GetWithExpectedPercent();
