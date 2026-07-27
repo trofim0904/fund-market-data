@@ -37,6 +37,11 @@ public partial class App
         });
         // Register ViewModels + Views
         services.AddSingleton<MainViewModel>();
+        services.AddSingleton<TickersViewModel>();
+        services.AddSingleton<BoughtAssetsViewModel>();
+        services.AddSingleton<RecommendationsViewModel>();
+        services.AddSingleton<BuyViewModel>();
+        services.AddSingleton<SellViewModel>();
         services.AddSingleton<MainWindow>();
         Services = services.BuildServiceProvider();
         var mainWindow = Services.GetRequiredService<MainWindow>();
