@@ -12,7 +12,7 @@
     <Grid Margin="16">
         <TabControl>
             <TabItem Header="Tickers">
-                <Grid Margin="16">
+                <Grid Margin="16" DataContext="{Binding TickersViewModel}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
@@ -116,7 +116,7 @@
             </TabItem>
 
             <TabItem Header="Purchases">
-                <Grid Margin="16" Background="{StaticResource Brush.Background}">
+                <Grid Margin="16" Background="{StaticResource Brush.Background}" DataContext="{Binding BuyViewModel}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
@@ -146,14 +146,14 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <ComboBox Grid.Column="0"
-                                  ItemsSource="{Binding ActiveTickers}"
+                                  ItemsSource="{Binding DataContext.TickersViewModel.ActiveTickers, RelativeSource={RelativeSource AncestorType=TabControl}}"
                                   DisplayMemberPath="Name"
                                   SelectedValuePath="Name"
                                   SelectedValue="{Binding BuyOrder.Asset, UpdateSourceTrigger=PropertyChanged}"
                                   Margin="0,0,4,0"/>
                         <Button Grid.Column="1"
                                 Content="↻" 
-                                Command="{Binding ReloadTickersCommand}"
+                                Command="{Binding DataContext.TickersViewModel.ReloadTickersCommand, RelativeSource={RelativeSource AncestorType=TabControl}}"
                                 Padding="4,2" 
                                 Width = "50"
                                 ToolTip="Reload Tickers"/>
@@ -240,7 +240,7 @@
             </TabItem>
             
             <TabItem Header="Sales">
-                <Grid Margin="16" Background="{StaticResource Brush.Background}">
+                <Grid Margin="16" Background="{StaticResource Brush.Background}" DataContext="{Binding SellViewModel}">
                     
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -271,14 +271,14 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <ComboBox Grid.Column="0"
-                                  ItemsSource="{Binding ActiveTickers}"
+                                  ItemsSource="{Binding DataContext.TickersViewModel.ActiveTickers, RelativeSource={RelativeSource AncestorType=TabControl}}"
                                   DisplayMemberPath="Name"
                                   SelectedValuePath="Name"
                                   SelectedValue="{Binding SellOrder.Asset, UpdateSourceTrigger=PropertyChanged}"
                                   Margin="0,0,4,0"/>
                         <Button Grid.Column="1"
                                 Content="↻" 
-                                Command="{Binding ReloadTickersCommand}"
+                                Command="{Binding DataContext.TickersViewModel.ReloadTickersCommand, RelativeSource={RelativeSource AncestorType=TabControl}}"
                                 Padding="4,2" 
                                 Width = "50"
                                 ToolTip="Reload Tickers"/>
@@ -362,7 +362,7 @@
             </TabItem>
             
             <TabItem Header="Totals">
-                <Grid Margin="16">
+                <Grid Margin="16" DataContext="{Binding BoughtAssetsViewModel}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
@@ -434,7 +434,7 @@
 
 
             <TabItem Header="Recommendations">
-                <Grid Margin="16">
+                <Grid Margin="16" DataContext="{Binding RecommendationsViewModel}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
