@@ -20,6 +20,11 @@ public class Repository<T>(StockMarketContext stockMarketContext) : IRepository<
         stockMarketContext.Set<T>().Remove(record);
     }
 
+    public void DeleteRange(IEnumerable<T> records)
+    {
+        stockMarketContext.Set<T>().RemoveRange(records);
+    }
+
     public void Update(T record)
     {
         stockMarketContext.Set<T>().Update(record);

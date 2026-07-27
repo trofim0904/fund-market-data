@@ -24,7 +24,7 @@ public class StockDataService(IUnitOfWork unitOfWork, IAssetReader reader) : ISt
         }
     }
 
-    public async Task DeleteTickerAsync(string name) 
+    public async Task DeleteTickerAsync(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -34,6 +34,10 @@ public class StockDataService(IUnitOfWork unitOfWork, IAssetReader reader) : ISt
         var tickerToDelete = unitOfWork.TickerRepository.Get(t => t.Name == ticker).FirstOrDefault();
         if (tickerToDelete != null)
         {
+            var tickerPurchases = unitOfWork.PurchaseRepository.Get(p => p.Ticker == ticker);
+            var tickerSales = unitOfWork.SaleRepository.Get(s => s.Ticker == ticker);
+            unitOfWork.PurchaseRepository.DeleteRange(tickerPurchases);
+            unitOfWork.SaleRepository.DeleteRange(tickerSales);
             unitOfWork.TickerRepository.Delete(tickerToDelete);
             await unitOfWork.SaveChangesAsync();
         }
