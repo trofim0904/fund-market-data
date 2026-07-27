@@ -6,6 +6,7 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <UseWPF>true</UseWPF>
+        <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
     </PropertyGroup>
 
     <ItemGroup>
@@ -23,6 +24,10 @@
       <ProjectReference Include="..\FundMarket.Database\FundMarket.Database.csproj" />
       <ProjectReference Include="..\FundMarket.Core\FundMarket.Core.csproj" />
       <ProjectReference Include="..\FundMarket.Reader\FundMarket.Reader.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Resource Include="Assets\icon.ico" />
     </ItemGroup>
 
 </Project>
