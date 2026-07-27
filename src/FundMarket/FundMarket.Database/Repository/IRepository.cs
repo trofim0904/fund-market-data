@@ -12,5 +12,7 @@ public interface IRepository<T> : IAsyncDisposable where T : class
 
     void Delete(T record);
 
+    void DeleteRange(IEnumerable<T> records);
+
     void Update(T record);
 }
