@@ -11,7 +11,6 @@ using FundMarket.Desktop.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 using Ticker = FundMarket.Desktop.Models.Ticker;
-using EFTicker = FundMarket.Database.Models.Ticker;
 
 namespace FundMarket.Desktop.ViewModels;
 
@@ -368,16 +367,6 @@ public partial class MainViewModel(
     #endregion
 
     #region Internal Methods
-    private static IEnumerable<Ticker> Map(IEnumerable<EFTicker> tickers)
-    {
-        return tickers.Select(ticker => new Ticker
-        {
-            Name = ticker.Name,
-            ExpectedPercent = ticker.ExpectedPercent ?? decimal.Zero,
-            IsIgnored = ticker.IsIgnored == true
-        });
-    }
-
     private async Task RefreshTickerDataAsync()
     {
         var tickers = (await stockService.GetAllTickersAsync()).ToList();
